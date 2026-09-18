@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import shutil
-from pathlib import Path
 import re
+import shutil
 import uuid
+from pathlib import Path
 
 from sqlalchemy.orm import Session
 
@@ -20,7 +20,12 @@ class ProjectService:
     def create_project(self, payload: ProjectCreate) -> Project:
         workspace_root = Path(self.settings.workspace_root).resolve()
         workspace_root.mkdir(parents=True, exist_ok=True)
-        slug = re.sub(r"[^a-z0-9-]+", "-", payload.name.lower().replace(" ", "-")).strip("-") or "project"
+        slug = (
+            re.sub(r"[^a-z0-9-]+", "-", payload.name.lower().replace(" ", "-")).strip(
+                "-"
+            )
+            or "project"
+        )
         project = Project(
             name=payload.name,
             description=payload.description,

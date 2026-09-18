@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import json
 import ipaddress
+import json
 import re
 from abc import ABC, abstractmethod
 from typing import Any
@@ -15,12 +15,16 @@ from app.models.schemas import CodeAction, DebugResult, ImplementationPlan
 
 class ModelProvider(ABC):
     @abstractmethod
-    async def generate_structured(self, prompt: str, schema_name: str, fallback: dict[str, Any]) -> dict[str, Any]:
+    async def generate_structured(
+        self, prompt: str, schema_name: str, fallback: dict[str, Any]
+    ) -> dict[str, Any]:
         raise NotImplementedError
 
 
 class MockModelProvider(ModelProvider):
-    async def generate_structured(self, prompt: str, schema_name: str, fallback: dict[str, Any]) -> dict[str, Any]:
+    async def generate_structured(
+        self, prompt: str, schema_name: str, fallback: dict[str, Any]
+    ) -> dict[str, Any]:
         lowered = prompt.lower()
         if schema_name == "implementation_plan":
             plan = ImplementationPlan(
@@ -59,24 +63,38 @@ class MockModelProvider(ModelProvider):
 
 class NemotronProvider(ModelProvider):
     def __init__(self, settings: Settings) -> None:
-        if not (settings.nebius_api_key and settings.nebius_base_url and settings.nemotron_model):
+        if not (
+            settings.nebius_api_key
+            and settings.nebius_base_url
+            and settings.nemotron_model
+        ):
             raise ValueError("Nebius/Nemotron configuration is incomplete.")
         self._validate_base_url(settings.nebius_base_url)
         self._settings = settings
 
-    async def generate_structured(self, prompt: str, schema_name: str, fallback: dict[str, Any]) -> dict[str, Any]:
-        headers = {"Authorization": "Bearer " + self._settings.nebius_api_key, "Content-Type": "application/json"}
+    async def generate_structured(
+        self, prompt: str, schema_name: str, fallback: dict[str, Any]
+    ) -> dict[str, Any]:
+        headers = {
+            "Authorization": "Bearer " + self._settings.nebius_api_key,
+            "Content-Type": "application/json",
+        }
         payload = {
             "model": self._settings.nemotron_model,
             "messages": [
-                {"role": "system", "content": f"Return valid JSON for schema: {schema_name}."},
+                {
+                    "role": "system",
+                    "content": f"Return valid JSON for schema: {schema_name}.",
+                },
                 {"role": "user", "content": prompt},
             ],
             "temperature": 0.1,
         }
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.post(self._settings.nebius_base_url, headers=headers, json=payload)
+                response = await client.post(
+                    self._settings.nebius_base_url, headers=headers, json=payload
+                )
                 response.raise_for_status()
             body = response.json()
             choice = body.get("choices", [{}])[0]

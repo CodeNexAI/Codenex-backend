@@ -13,7 +13,9 @@ class GitTools:
 
     def _run(self, workspace_path: str, *args: str) -> subprocess.CompletedProcess[str]:
         if not self.allow_host_git:
-            raise RuntimeError("Host git execution is disabled for untrusted workflows.")
+            raise RuntimeError(
+                "Host git execution is disabled for untrusted workflows."
+            )
         workspace = ensure_within_base(self.workspace_root, workspace_path)
         return subprocess.run(
             ["git", *args],
@@ -36,9 +38,17 @@ class GitTools:
         workspace = ensure_within_base(self.workspace_root, workspace_path)
         validated_paths = []
         for path in paths:
-            validated_paths.append(str(ensure_within_base(workspace, Path(workspace) / path).relative_to(workspace)))
+            validated_paths.append(
+                str(
+                    ensure_within_base(workspace, Path(workspace) / path).relative_to(
+                        workspace
+                    )
+                )
+            )
         return self._run(workspace_path, "add", *validated_paths).stdout
 
     def commit(self, workspace_path: str, message: str) -> str:
         result = self._run(workspace_path, "commit", "-m", message)
-        return "\n".join(part for part in [result.stdout.strip(), result.stderr.strip()] if part)
+        return "\n".join(
+            part for part in [result.stdout.strip(), result.stderr.strip()] if part
+        )

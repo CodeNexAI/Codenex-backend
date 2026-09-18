@@ -7,7 +7,11 @@ from app.database.models import Project
 def test_project_create_retrieve_and_delete(client):
     create_response = client.post(
         "/api/projects",
-        json={"name": "Student API", "description": "CRUD service", "project_type": "fastapi"},
+        json={
+            "name": "Student API",
+            "description": "CRUD service",
+            "project_type": "fastapi",
+        },
     )
     assert create_response.status_code == 201
     project = create_response.json()

@@ -32,7 +32,9 @@ def get_event_manager() -> EventManager:
 EventManagerDependency = Annotated[EventManager, Depends(get_event_manager)]
 
 
-def get_project_service(db: DatabaseDependency, settings: SettingsDependency) -> ProjectService:
+def get_project_service(
+    db: DatabaseDependency, settings: SettingsDependency
+) -> ProjectService:
     return ProjectService(db, settings)
 
 

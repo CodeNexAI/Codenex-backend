@@ -2,14 +2,15 @@ from __future__ import annotations
 
 import asyncio
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import WebSocket
 from sqlalchemy.orm import Session, selectinload
 
 from app.database.models import AgentEvent as AgentEventModel
-from app.database.models import AgentSession, TestResult as TestResultModel
+from app.database.models import AgentSession
+from app.database.models import TestResult as TestResultModel
 from app.models.schemas import AgentEvent, AgentSessionResponse, TestResult
 
 
@@ -81,10 +82,18 @@ class SessionService:
         self.db.add(event)
         self.db.commit()
         self.db.refresh(event)
-        await self.event_manager.broadcast(session_id, self._event_schema(event).model_dump(mode="json"))
+        await self.event_manager.broadcast(
+            session_id, self._event_schema(event).model_dump(mode="json")
+        )
         return event
 
-    def update_session(self, session_id: str, status: str, retry_count: int | None = None, completed: bool = False) -> AgentSession:
+    def update_session(
+        self,
+        session_id: str,
+        status: str,
+        retry_count: int | None = None,
+        completed: bool = False,
+    ) -> AgentSession:
         session = self.db.get(AgentSession, session_id)
         if session is None:
             raise ValueError("Session not found")
@@ -92,7 +101,7 @@ class SessionService:
         if retry_count is not None:
             session.retry_count = retry_count
         if completed:
-            session.completed_at = datetime.now(timezone.utc)
+            session.completed_at = datetime.now(UTC)
         self.db.add(session)
         self.db.commit()
         self.db.refresh(session)
@@ -131,7 +140,10 @@ class SessionService:
             retry_count=session.retry_count,
             started_at=session.started_at,
             completed_at=session.completed_at,
-            events=[self._event_schema(event) for event in sorted(session.events, key=lambda item: item.timestamp)],
+            events=[
+                self._event_schema(event)
+                for event in sorted(session.events, key=lambda item: item.timestamp)
+            ],
         )
 
     def _event_schema(self, event: AgentEventModel) -> AgentEvent:

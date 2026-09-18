@@ -15,16 +15,27 @@ def parse_test_result(result: SandboxResult) -> TestResult:
     best_total = -1
     for line in output.splitlines():
         if "passed" in line or "failed" in line or "skipped" in line:
-            counts = {match.group("label"): int(match.group("count")) for match in _COUNT_RE.finditer(line)}
+            counts = {
+                match.group("label"): int(match.group("count"))
+                for match in _COUNT_RE.finditer(line)
+            }
             if counts:
-                total = counts.get("passed", 0) + counts.get("failed", 0) + counts.get("skipped", 0)
+                total = (
+                    counts.get("passed", 0)
+                    + counts.get("failed", 0)
+                    + counts.get("skipped", 0)
+                )
                 if total >= best_total:
                     best_total = total
                     passed = counts.get("passed", 0)
                     failed = counts.get("failed", 0)
                     skipped = counts.get("skipped", 0)
     total = passed + failed + skipped
-    status = "error" if result.status == "error" or result.error_message else ("passed" if result.exit_code == 0 else "failed")
+    status = (
+        "error"
+        if result.status == "error" or result.error_message
+        else ("passed" if result.exit_code == 0 else "failed")
+    )
     return TestResult(
         status=status,
         total=total,

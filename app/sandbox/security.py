@@ -15,7 +15,7 @@ def ensure_within_base(base_path: str | Path, target_path: str | Path) -> Path:
     target = Path(target_path).resolve()
     try:
         target.relative_to(base)
-    except ValueError as exc:
+    except ValueError:
         raise SandboxSecurityError("Path escapes the configured workspace root.")
     return target
 

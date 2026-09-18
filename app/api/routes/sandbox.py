@@ -1,6 +1,10 @@
 from fastapi import APIRouter, HTTPException
 
-from app.api.dependencies import DatabaseDependency, SandboxRunnerDependency, SettingsDependency
+from app.api.dependencies import (
+    DatabaseDependency,
+    SandboxRunnerDependency,
+    SettingsDependency,
+)
 from app.models.schemas import SandboxRequest, SandboxResult
 from app.sandbox.executor import SandboxExecutionError
 from app.sandbox.security import SandboxSecurityError

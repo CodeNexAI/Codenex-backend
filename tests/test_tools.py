@@ -2,9 +2,15 @@ from pathlib import Path
 
 import pytest
 
-from app.sandbox.security import SandboxSecurityError
 from app.models import schemas
-from app.tools.file_tools import create_file, delete_file, list_files, read_file, update_file
+from app.sandbox.security import SandboxSecurityError
+from app.tools.file_tools import (
+    create_file,
+    delete_file,
+    list_files,
+    read_file,
+    update_file,
+)
 from app.tools.git_tools import GitTools
 from app.tools.test_tools import parse_test_result
 

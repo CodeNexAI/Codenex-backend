@@ -3,7 +3,6 @@ from __future__ import annotations
 import shutil
 import subprocess
 import time
-from pathlib import Path
 
 from app.models.schemas import SandboxResult
 from app.sandbox.security import ensure_within_base, validate_task

@@ -10,7 +10,12 @@ class CoderAgent:
         self.provider = provider
 
     async def generate_actions(self, plan: ImplementationPlan) -> list[CodeAction]:
-        fallback = {"actions": [CodeAction(action="create_file", path=path, content="").model_dump() for path in plan.files]}
+        fallback = {
+            "actions": [
+                CodeAction(action="create_file", path=path, content="").model_dump()
+                for path in plan.files
+            ]
+        }
         payload = await self.provider.generate_structured(
             prompt=f"Generate code actions for files: {plan.files}",
             schema_name="code_actions",
@@ -18,7 +23,9 @@ class CoderAgent:
         )
         return [CodeAction.model_validate(item) for item in payload.get("actions", [])]
 
-    async def generate_fix_actions(self, debug_result: DebugResult, plan: ImplementationPlan) -> list[CodeAction]:
+    async def generate_fix_actions(
+        self, debug_result: DebugResult, plan: ImplementationPlan
+    ) -> list[CodeAction]:
         return [
             CodeAction(
                 action="update_file",
@@ -32,7 +39,7 @@ class CoderAgent:
             if action.action == "create_file":
                 create_file(workspace_path, action.path, action.content or "")
             elif action.action == "update_file":
-                target = (action.content or "")
+                target = action.content or ""
                 try:
                     update_file(workspace_path, action.path, target)
                 except FileNotFoundError:

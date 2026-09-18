@@ -17,7 +17,10 @@ from app.config.settings import get_settings
 from app.database.database import configure_database, create_tables, get_session_factory
 from app.services.session_service import SessionService
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s %(message)s",
+)
 logger = logging.getLogger("codenex")
 
 
@@ -36,19 +39,44 @@ def create_app() -> FastAPI:
     )
 
     @app.exception_handler(HTTPException)
-    async def http_exception_handler(_: Request, exc: HTTPException) -> JSONResponse:
-        return JSONResponse(status_code=exc.status_code, content={"error": {"code": "HTTP_ERROR", "message": str(exc.detail)}})
+    async def http_exception_handler(
+        _: Request,
+        exc: HTTPException,
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"error": {"code": "HTTP_ERROR", "message": str(exc.detail)}},
+        )
 
     @app.exception_handler(RequestValidationError)
-    async def validation_exception_handler(_: Request, exc: RequestValidationError) -> JSONResponse:
-        return JSONResponse(status_code=422, content={"error": {"code": "INVALID_REQUEST", "message": "Invalid request."}})
+    async def validation_exception_handler(
+        _: Request,
+        exc: RequestValidationError,
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=422,
+            content={
+                "error": {"code": "INVALID_REQUEST", "message": "Invalid request."}
+            },
+        )
 
     @app.exception_handler(Exception)
-    async def generic_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    async def generic_exception_handler(
+        request: Request,
+        exc: Exception,
+    ) -> JSONResponse:
         if request.scope["type"] != "http":
             raise exc
         logger.exception("unhandled_exception")
-        return JSONResponse(status_code=500, content={"error": {"code": "INTERNAL_ERROR", "message": "An internal error occurred."}})
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": {
+                    "code": "INTERNAL_ERROR",
+                    "message": "An internal error occurred.",
+                }
+            },
+        )
 
     app.include_router(health_router)
     app.include_router(projects_router)

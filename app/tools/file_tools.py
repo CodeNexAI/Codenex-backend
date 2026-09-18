@@ -39,4 +39,6 @@ def delete_file(base_path: str, relative_path: str) -> None:
 
 def list_files(base_path: str) -> list[str]:
     base = Path(base_path).resolve()
-    return sorted(str(path.relative_to(base)) for path in base.rglob("*") if path.is_file())
+    return sorted(
+        str(path.relative_to(base)) for path in base.rglob("*") if path.is_file()
+    )

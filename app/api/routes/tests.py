@@ -1,7 +1,11 @@
 from fastapi import APIRouter, HTTPException, status
 
 from app.agents.tester import TesterAgent
-from app.api.dependencies import SandboxRunnerDependency, SessionServiceDependency, SettingsDependency
+from app.api.dependencies import (
+    SandboxRunnerDependency,
+    SessionServiceDependency,
+    SettingsDependency,
+)
 from app.models.schemas import TestRequest, TestResult
 from app.sandbox.executor import SandboxExecutionError
 from app.services.project_service import ProjectService
@@ -28,12 +32,16 @@ async def run_tests(
         session_service.update_session(session.id, result.status, completed=True)
         return TestResult.model_validate(stored)
     except SandboxExecutionError as exc:
-        session_service.update_session(session.id, "failed", retry_count=0, completed=True)
+        session_service.update_session(
+            session.id, "failed", retry_count=0, completed=True
+        )
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
 @router.get("/{session_id}", response_model=TestResult)
-async def get_test_result(session_id: str, session_service: SessionServiceDependency) -> TestResult:
+async def get_test_result(
+    session_id: str, session_service: SessionServiceDependency
+) -> TestResult:
     result = session_service.latest_test_result(session_id)
     if result is None:
         raise HTTPException(status_code=404, detail="Test result not found")

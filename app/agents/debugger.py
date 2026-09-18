@@ -15,7 +15,10 @@ class DebuggerAgent:
             fix="Inspect the failing implementation and retry",
         )
         payload = await self.provider.generate_structured(
-            prompt=f"Analyze test failure: stdout={test_result.stdout}\nstderr={test_result.stderr}",
+            prompt=(
+                "Analyze test failure: "
+                f"stdout={test_result.stdout}\nstderr={test_result.stderr}"
+            ),
             schema_name="debug_result",
             fallback=fallback.model_dump(),
         )

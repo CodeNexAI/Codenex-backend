@@ -10,10 +10,10 @@ from app.agents.planner import PlannerAgent
 from app.agents.tester import TesterAgent as BackendTesterAgent
 from app.api.dependencies import get_orchestrator, get_sandbox_runner
 from app.config.settings import get_settings
-from app.database.models import AgentSession as AgentSessionModel
 from app.database.database import get_session_factory
-from app.models.nemotron import MockModelProvider, NemotronProvider
+from app.database.models import AgentSession as AgentSessionModel
 from app.models import schemas
+from app.models.nemotron import MockModelProvider, NemotronProvider
 from app.sandbox.executor import SandboxExecutionError
 from app.services.project_service import ProjectService
 from app.services.session_service import EventManager, SessionService
@@ -29,7 +29,9 @@ class FakeRunner:
 
 class FailingTester:
     async def run_tests(self, workspace_path: str) -> schemas.TestResult:
-        return schemas.TestResult(status="failed", total=1, passed=0, failed=1, stderr="boom")
+        return schemas.TestResult(
+            status="failed", total=1, passed=0, failed=1, stderr="boom"
+        )
 
 
 def test_mock_model_provider_and_planner_and_debugger():
@@ -37,7 +39,9 @@ def test_mock_model_provider_and_planner_and_debugger():
     plan = asyncio.run(PlannerAgent(provider).plan("Create a FastAPI student API"))
     debug = asyncio.run(
         DebuggerAgent(provider).analyze_failure(
-            schemas.TestResult(status="failed", total=1, failed=1, passed=0, stderr="NameError")
+            schemas.TestResult(
+                status="failed", total=1, failed=1, passed=0, stderr="NameError"
+            )
         )
     )
 
@@ -57,11 +61,19 @@ def test_nemotron_provider_normalizes_fenced_and_block_content():
         )
     )
 
-    assert provider._normalize_content("prefix\n```json\n{\"status\": \"ok\"}\n```") == "{\"status\": \"ok\"}"
-    assert provider._normalize_content([{"text": "{\"status\": \"ok\"}"}]) == "{\"status\": \"ok\"}"
+    assert (
+        provider._normalize_content('prefix\n```json\n{"status": "ok"}\n```')
+        == '{"status": "ok"}'
+    )
+    assert (
+        provider._normalize_content([{"text": '{"status": "ok"}'}])
+        == '{"status": "ok"}'
+    )
 
 
-def test_nemotron_provider_generate_structured_handles_alternate_and_invalid_payloads(monkeypatch):
+def test_nemotron_provider_generate_structured_handles_alternate_and_invalid_payloads(
+    monkeypatch,
+):
     provider = NemotronProvider(
         get_settings().model_copy(
             update={
@@ -73,7 +85,19 @@ def test_nemotron_provider_generate_structured_handles_alternate_and_invalid_pay
     )
 
     responses = [
-        {"choices": [{"message": {"content": "```json\n{\"project_type\":\"fastapi\",\"tasks\":[],\"files\":[],\"dependencies\":[]}\n```"}}]},
+        {
+            "choices": [
+                {
+                    "message": {
+                        "content": (
+                            "```json\n"
+                            '{"project_type":"fastapi","tasks":[],"files":[],"dependencies":[]}'
+                            "\n```"
+                        )
+                    }
+                }
+            ]
+        },
         {"choices": [{"message": {}}]},
     ]
 
@@ -187,8 +211,16 @@ def test_coder_agent_creates_files(tmp_path: Path):
 
 
 def test_tester_agent_parses_results():
-    result = schemas.SandboxResult(status="failed", exit_code=1, stdout="1 failed, 2 passed in 0.12s", stderr="", duration=0.12)
-    parsed = asyncio.run(BackendTesterAgent(FakeRunner(result)).run_tests("/tmp/workspace"))
+    result = schemas.SandboxResult(
+        status="failed",
+        exit_code=1,
+        stdout="1 failed, 2 passed in 0.12s",
+        stderr="",
+        duration=0.12,
+    )
+    parsed = asyncio.run(
+        BackendTesterAgent(FakeRunner(result)).run_tests("/tmp/workspace")
+    )
 
     assert parsed.total == 3
     assert parsed.failed == 1
@@ -203,11 +235,16 @@ def test_agent_session_creation(client, app_instance):
             return None
 
     app_instance.dependency_overrides[get_orchestrator] = lambda: FakeOrchestrator()
-    project = client.post("/api/projects", json={"name": "Agent Project", "project_type": "fastapi"}).json()
+    project = client.post(
+        "/api/projects", json={"name": "Agent Project", "project_type": "fastapi"}
+    ).json()
 
     response = client.post(
         "/api/agent/run",
-        json={"project_id": project["id"], "requirement": "Create a FastAPI student API"},
+        json={
+            "project_id": project["id"],
+            "requirement": "Create a FastAPI student API",
+        },
     )
 
     assert response.status_code == 202
@@ -222,10 +259,15 @@ def test_agent_websocket_endpoint(client, app_instance):
             return None
 
     app_instance.dependency_overrides[get_orchestrator] = lambda: FakeOrchestrator()
-    project = client.post("/api/projects", json={"name": "WebSocket Project", "project_type": "fastapi"}).json()
+    project = client.post(
+        "/api/projects", json={"name": "WebSocket Project", "project_type": "fastapi"}
+    ).json()
     response = client.post(
         "/api/agent/run",
-        json={"project_id": project["id"], "requirement": "Create a FastAPI student API"},
+        json={
+            "project_id": project["id"],
+            "requirement": "Create a FastAPI student API",
+        },
     )
     session_id = response.json()["session_id"]
 
@@ -245,7 +287,9 @@ def test_run_tests_endpoint_persists_results(client, app_instance):
             )
 
     app_instance.dependency_overrides[get_sandbox_runner] = lambda: FakeRunner()
-    project = client.post("/api/projects", json={"name": "Test Project", "project_type": "fastapi"}).json()
+    project = client.post(
+        "/api/projects", json={"name": "Test Project", "project_type": "fastapi"}
+    ).json()
 
     response = client.post("/api/tests/run", json={"project_id": project["id"]})
 
@@ -266,15 +310,25 @@ def test_run_tests_endpoint_marks_session_failed_on_sandbox_error(client, app_in
             raise SandboxExecutionError("Docker is required for sandbox execution.")
 
     app_instance.dependency_overrides[get_sandbox_runner] = lambda: FailingRunner()
-    project = client.post("/api/projects", json={"name": "Failing Test Project", "project_type": "fastapi"}).json()
+    project = client.post(
+        "/api/projects",
+        json={"name": "Failing Test Project", "project_type": "fastapi"},
+    ).json()
 
     response = client.post("/api/tests/run", json={"project_id": project["id"]})
 
     assert response.status_code == 503
-    assert response.json()["error"]["message"] == "Docker is required for sandbox execution."
+    assert (
+        response.json()["error"]["message"]
+        == "Docker is required for sandbox execution."
+    )
 
     with get_session_factory()() as db:
-        session = db.query(AgentSessionModel).order_by(AgentSessionModel.started_at.desc()).first()
+        session = (
+            db.query(AgentSessionModel)
+            .order_by(AgentSessionModel.started_at.desc())
+            .first()
+        )
         assert session is not None
         assert session.project_id == project["id"]
         assert session.status == "failed"
@@ -292,7 +346,15 @@ def test_orchestrator_retry_limit(app_instance):
 
     with session_factory() as db:
         project = ProjectService(db, settings).create_project(
-            payload=type("ProjectPayload", (), {"name": "Retry Project", "description": None, "project_type": "fastapi"})()
+            payload=type(
+                "ProjectPayload",
+                (),
+                {
+                    "name": "Retry Project",
+                    "description": None,
+                    "project_type": "fastapi",
+                },
+            )()
         )
         session = SessionService(db, event_manager).create_session(project.id)
 

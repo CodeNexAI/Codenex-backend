@@ -18,13 +18,19 @@ async def create_project(
 
 
 @router.get("", response_model=list[ProjectResponse])
-async def list_projects(db: DatabaseDependency, settings: SettingsDependency) -> list[ProjectResponse]:
+async def list_projects(
+    db: DatabaseDependency, settings: SettingsDependency
+) -> list[ProjectResponse]:
     service = ProjectService(db, settings)
-    return [ProjectResponse.model_validate(project) for project in service.list_projects()]
+    return [
+        ProjectResponse.model_validate(project) for project in service.list_projects()
+    ]
 
 
 @router.get("/{project_id}", response_model=ProjectResponse)
-async def get_project(project_id: str, db: DatabaseDependency, settings: SettingsDependency) -> ProjectResponse:
+async def get_project(
+    project_id: str, db: DatabaseDependency, settings: SettingsDependency
+) -> ProjectResponse:
     service = ProjectService(db, settings)
     project = service.get_project(project_id)
     if project is None:
@@ -33,7 +39,9 @@ async def get_project(project_id: str, db: DatabaseDependency, settings: Setting
 
 
 @router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_project(project_id: str, db: DatabaseDependency, settings: SettingsDependency) -> None:
+async def delete_project(
+    project_id: str, db: DatabaseDependency, settings: SettingsDependency
+) -> None:
     service = ProjectService(db, settings)
     if not service.delete_project(project_id):
         raise HTTPException(status_code=404, detail="Project not found")
