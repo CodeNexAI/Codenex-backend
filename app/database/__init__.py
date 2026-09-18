@@ -1,14 +1,10 @@
-"""Database infrastructure and persistence models."""
+"""Database infrastructure."""
 
-from app.database.database import SessionLocal, get_db, init_database
-from app.database.models import AgentEvent, AgentSession, Project, TestResult
+from app.database.database import (
+    configure_database,
+    create_tables,
+    get_db,
+    get_session_factory,
+)
 
-__all__ = [
-    "AgentEvent",
-    "AgentSession",
-    "Project",
-    "SessionLocal",
-    "TestResult",
-    "get_db",
-    "init_database",
-]
+__all__ = ["configure_database", "create_tables", "get_db", "get_session_factory"]

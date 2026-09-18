@@ -1,88 +1,199 @@
-# CodeNex AI Backend
+# CodeNex AI
 
-> **From Idea to Working Code — With AI**
+From Idea to Working Code — With AI
 
-CodeNex AI is an agentic coding assistant being built for the NVIDIA x Nebius
-Global AI Hackathon. This repository contains the backend foundation for the
-Coding and Agentic Engineering track.
+## Overview
 
-The current milestone provides a clean FastAPI service, environment-based
-configuration, health checking, developer tooling, and a container definition.
-It intentionally does not implement agents, model integrations, persistence,
-sandbox execution, code generation, or a frontend.
+CodeNex AI is an agentic coding assistant for the NVIDIA x Nebius Global AI Hackathon. This repository provides the backend foundation for Track 1 and focuses on a modular FastAPI service that can plan, generate, test, and debug code inside an isolated sandbox.
 
-## Quick start
+## Problem
 
-**Requirements:** Python 3.11 or newer.
+Developers often have requirements but still need to translate them into plans, code, tests, and execution workflows. Doing that manually slows iteration and makes it harder to build reliable automation.
 
-```bash
-pip install -r requirements.txt
-uvicorn app.main:app --reload
-```
+## Solution
 
-The API is available at `http://127.0.0.1:8000`. Interactive API documentation
-is available at `/docs`.
+CodeNex Backend provides a clean backend foundation with API endpoints, WebSocket events, database persistence, pluggable model providers, an agent orchestration loop, and a Docker-based sandbox boundary for untrusted generated code.
 
-```bash
-curl http://127.0.0.1:8000/health
-```
+## Features
 
-```json
-{
-  "status": "ok",
-  "service": "codenex-backend"
-}
-```
-
-## Configuration
-
-Copy the template before running the service:
-
-```bash
-cp .env.example .env
-```
-
-Settings are read from `.env` for local development and can be overridden by
-environment variables. `APP_NAME`, `APP_ENV`, `DEBUG`, `DATABASE_URL`,
-`NEBIUS_API_KEY`, `NEBIUS_BASE_URL`, `NEMOTRON_MODEL`, `CORS_ORIGINS`,
-`SANDBOX_TIMEOUT`, and `MAX_AGENT_RETRIES` are supported.
-
-`CORS_ORIGINS` accepts a comma-separated list of origins. `NEBIUS_API_KEY` and
-`DATABASE_URL` are treated as sensitive values and are never logged or exposed
-by the API. By default, CodeNex stores its local development data in
-`codenex.db` through SQLite; set `DATABASE_URL` to a PostgreSQL SQLAlchemy URL
-when a PostgreSQL deployment is introduced. The current foundation does not
-connect to a model provider. Never commit `.env` files or credentials.
-
-## Database
-
-The persistence layer uses SQLAlchemy ORM models and repositories, with
-database initialization kept separate from route handlers. It records projects,
-agent-session lifecycle data, session events, and test-run results; it does not
-implement any agent behavior. SQLite is the development default, while the
-database engine accepts standard SQLAlchemy URLs to support a future PostgreSQL
-deployment.
-
-## Development
-
-```bash
-# Run tests
-pytest
-
-# Run linting
-ruff check .
-
-# Run type checks
-mypy
-```
-
-Convenience scripts are available as `./scripts/dev.sh` and `./scripts/test.sh`.
+- FastAPI backend with async endpoints and WebSocket support
+- SQLite + SQLAlchemy persistence for projects, sessions, events, and test results
+- Planner, Coder, Tester, Debugger, and Orchestrator foundation classes
+- Nemotron model provider abstraction with a mock provider for local development
+- Docker sandbox abstraction for controlled execution
+- Safe file, terminal, test, and Git tooling primitives
+- Structured error responses
+- Environment-driven configuration and CORS
 
 ## Architecture
 
-See [docs/architecture.md](docs/architecture.md) for the current foundation
-and intended product direction.
+The frontend lives in a separate `codenex-frontend` repository and talks to this backend over REST and WebSocket. The backend coordinates planning, coding, testing, and debugging while keeping NVIDIA Nemotron access behind a model-provider abstraction.
+
+See `docs/architecture.md`.
+
+## Agent Workflow
+
+The current foundation implements the orchestration path:
+
+Planner → Coder → Sandbox → Tester → Debugger → Coder
+
+with a bounded retry loop.
+
+See `docs/agent-workflow.md`.
+
+## NVIDIA Nemotron Integration
+
+CodeNex uses NVIDIA Nemotron through Nebius Token Factory as the intelligence layer for coding agents. Agent code does not call Nebius directly; the backend routes those requests through `NemotronProvider`, and local development falls back to `MockModelProvider` when credentials are not configured.
+
+## Nebius Token Factory Integration
+
+Configure the following environment variables to enable the real provider:
+
+- `NEBIUS_API_KEY`
+- `NEBIUS_BASE_URL`
+- `NEMOTRON_MODEL`
+
+See `docs/nebius-integration.md`.
+
+## Sandbox
+
+Generated code is not executed directly on the backend host. The backend uses a dedicated sandbox abstraction that is designed to invoke a separate Docker image with restricted networking, timeouts, and workspace scoping.
+
+## Security
+
+This foundation includes protections against path traversal, unsafe workspace access, unrestricted task dispatch, infinite agent retries, and accidental secret exposure in configuration.
+
+See `docs/security.md`.
+
+## API
+
+Implemented foundation endpoints:
+
+- `GET /health`
+- `POST /api/projects`
+- `GET /api/projects`
+- `GET /api/projects/{project_id}`
+- `DELETE /api/projects/{project_id}`
+- `POST /api/agent/run`
+- `GET /api/agent/{session_id}`
+- `POST /api/sandbox/run`
+- `POST /api/tests/run`
+- `GET /api/tests/{session_id}`
+
+## WebSocket
+
+- `GET /ws/agent/{session_id}` upgrades to a WebSocket connection and streams session events.
+
+## Tech Stack
+
+- Python 3.11+
+- FastAPI
+- Pydantic v2
+- SQLAlchemy
+- SQLite
+- HTTPX
+- pytest
+- Docker
+- python-dotenv
+
+## Repository Structure
+
+```text
+codenex-backend/
+├── app/
+├── docs/
+├── sandbox/
+├── scripts/
+├── tests/
+└── pyproject.toml
+```
+
+## Environment Variables
+
+Copy `.env.example` to `.env` and set values as needed.
+
+Key variables:
+
+- `APP_ENV`
+- `DEBUG`
+- `DATABASE_URL`
+- `CORS_ORIGINS`
+- `WORKSPACE_ROOT`
+- `SANDBOX_IMAGE`
+- `SANDBOX_TIMEOUT`
+- `MAX_AGENT_RETRIES`
+- `NEBIUS_API_KEY`
+- `NEBIUS_BASE_URL`
+- `NEMOTRON_MODEL`
+
+## Local Installation
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+or run:
+
+```bash
+./scripts/setup.sh
+```
+
+## Running the Backend
+
+```bash
+uvicorn app.main:app --reload
+```
+
+or run:
+
+```bash
+./scripts/dev.sh
+```
+
+## Running Tests
+
+```bash
+pytest -q
+```
+
+or run:
+
+```bash
+./scripts/test.sh
+```
+
+## Example Request
+
+```bash
+curl -X POST http://localhost:8000/api/projects \
+  -H "Content-Type: application/json" \
+  -d '{"name":"student-api","description":"FastAPI CRUD API","project_type":"fastapi"}'
+```
+
+## Example Agent Workflow
+
+1. Create a project
+2. Start an agent session with a requirement
+3. Receive planning/coding/testing/debugging events over WebSocket
+4. Inspect session state and persisted test results
+
+## Frontend Integration
+
+The frontend should call only this backend over REST and WebSocket. It must not directly call NVIDIA Nemotron or Nebius endpoints.
+
+## Hackathon Track
+
+Coding and Agentic Engineering Track
+
+## Future Improvements
+
+- Expand real Nemotron prompt design and schema enforcement
+- Add richer sandbox resource controls and artifact capture
+- Persist generated files and execution bundles per session
+- Support more project templates and language runtimes
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+MIT License. See `LICENSE`.

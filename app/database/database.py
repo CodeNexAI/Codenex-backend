@@ -1,36 +1,51 @@
 """SQLAlchemy engine, session, and schema initialization utilities."""
 
+from __future__ import annotations
+
 from collections.abc import Generator
 
-from sqlalchemy import Engine, create_engine
+from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.config import get_settings
 from app.database.models import Base
 
+_engine = None
+_SessionLocal = None
 
-def create_database_engine(database_url: str) -> Engine:
-    """Create an engine configured for SQLite or a future SQLAlchemy dialect."""
+
+def configure_database(database_url: str) -> None:
+    """Configure the database engine and associated session factory."""
+    global _engine, _SessionLocal
     connect_args = (
         {"check_same_thread": False} if database_url.startswith("sqlite") else {}
     )
-    return create_engine(database_url, connect_args=connect_args)
+    _engine = create_engine(database_url, connect_args=connect_args)
+    _SessionLocal = sessionmaker(
+        bind=_engine,
+        autoflush=False,
+        autocommit=False,
+        expire_on_commit=False,
+    )
 
 
-database_url = get_settings().database_url.get_secret_value()
-engine = create_database_engine(database_url)
-SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
+def get_session_factory() -> sessionmaker:
+    """Return the configured session factory."""
+    if _SessionLocal is None:
+        raise RuntimeError("Database is not configured.")
+    return _SessionLocal
 
 
-def init_database() -> None:
-    """Create the configured database schema if it does not already exist."""
-    Base.metadata.create_all(bind=engine)
+def create_tables() -> None:
+    """Create the configured database schema."""
+    if _engine is None:
+        raise RuntimeError("Database is not configured.")
+    Base.metadata.create_all(bind=_engine)
 
 
 def get_db() -> Generator[Session, None, None]:
     """Yield a database session and guarantee it is closed afterward."""
-    session = SessionLocal()
+    db = get_session_factory()()
     try:
-        yield session
+        yield db
     finally:
-        session.close()
+        db.close()

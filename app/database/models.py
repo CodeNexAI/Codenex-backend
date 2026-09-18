@@ -1,20 +1,22 @@
 """SQLAlchemy ORM entities for CodeNex persistence."""
 
-from datetime import datetime
-from typing import Any
-from uuid import uuid4
+from __future__ import annotations
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String, Text, func
+import uuid
+from datetime import UTC, datetime
+
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.types import JSON
 
 
-def new_uuid() -> str:
-    """Generate a portable UUID primary-key value."""
-    return str(uuid4())
+def utcnow() -> datetime:
+    """Return a timezone-aware UTC timestamp."""
+    return datetime.now(UTC)
 
 
 class Base(DeclarativeBase):
-    """Base class for all ORM models."""
+    """Base class for CodeNex ORM entities."""
 
 
 class Project(Base):
@@ -22,23 +24,26 @@ class Project(Base):
 
     __tablename__ = "projects"
 
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    id: Mapped[str] = mapped_column(
+        String(36),
+        primary_key=True,
+        default=lambda: str(uuid.uuid4()),
+    )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    project_type: Mapped[str] = mapped_column(String(100), nullable=False)
-    workspace_path: Mapped[str] = mapped_column(String(1024), nullable=False)
-    status: Mapped[str] = mapped_column(String(50), nullable=False, default="created")
+    description: Mapped[str | None] = mapped_column(Text(), nullable=True)
+    project_type: Mapped[str] = mapped_column(String(100), default="generic")
+    workspace_path: Mapped[str] = mapped_column(String(500), nullable=False)
+    status: Mapped[str] = mapped_column(String(50), default="created")
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
+        DateTime(timezone=True), default=utcnow
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        server_default=func.now(),
-        onupdate=func.now(),
-        nullable=False,
+        default=utcnow,
+        onupdate=utcnow,
     )
 
-    agent_sessions: Mapped[list["AgentSession"]] = relationship(
+    sessions: Mapped[list[AgentSession]] = relationship(
         back_populates="project",
         cascade="all, delete-orphan",
     )
@@ -49,27 +54,31 @@ class AgentSession(Base):
 
     __tablename__ = "agent_sessions"
 
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    id: Mapped[str] = mapped_column(
+        String(36),
+        primary_key=True,
+        default=lambda: str(uuid.uuid4()),
+    )
     project_id: Mapped[str] = mapped_column(
         ForeignKey("projects.id", ondelete="CASCADE"),
         nullable=False,
-        index=True,
     )
-    status: Mapped[str] = mapped_column(String(50), nullable=False, default="pending")
-    retry_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    status: Mapped[str] = mapped_column(String(50), default="started")
+    retry_count: Mapped[int] = mapped_column(Integer, default=0)
     started_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
+        DateTime(timezone=True), default=utcnow
     )
     completed_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
+        DateTime(timezone=True),
+        nullable=True,
     )
 
-    project: Mapped[Project] = relationship(back_populates="agent_sessions")
-    events: Mapped[list["AgentEvent"]] = relationship(
+    project: Mapped[Project] = relationship(back_populates="sessions")
+    events: Mapped[list[AgentEvent]] = relationship(
         back_populates="session",
         cascade="all, delete-orphan",
     )
-    test_results: Mapped[list["TestResult"]] = relationship(
+    test_results: Mapped[list[TestResult]] = relationship(
         back_populates="session",
         cascade="all, delete-orphan",
     )
@@ -80,21 +89,20 @@ class AgentEvent(Base):
 
     __tablename__ = "agent_events"
 
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    id: Mapped[str] = mapped_column(
+        String(36),
+        primary_key=True,
+        default=lambda: str(uuid.uuid4()),
+    )
     session_id: Mapped[str] = mapped_column(
         ForeignKey("agent_sessions.id", ondelete="CASCADE"),
         nullable=False,
-        index=True,
     )
     stage: Mapped[str] = mapped_column(String(100), nullable=False)
     status: Mapped[str] = mapped_column(String(50), nullable=False)
-    message: Mapped[str] = mapped_column(Text, nullable=False)
-    metadata_: Mapped[dict[str, Any] | None] = mapped_column(
-        "metadata", JSON, nullable=True
-    )
-    timestamp: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    message: Mapped[str] = mapped_column(Text(), nullable=False)
+    event_metadata: Mapped[dict | None] = mapped_column("metadata", JSON, nullable=True)
+    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     session: Mapped[AgentSession] = relationship(back_populates="events")
 
@@ -104,22 +112,25 @@ class TestResult(Base):
 
     __tablename__ = "test_results"
 
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    id: Mapped[str] = mapped_column(
+        String(36),
+        primary_key=True,
+        default=lambda: str(uuid.uuid4()),
+    )
     session_id: Mapped[str] = mapped_column(
         ForeignKey("agent_sessions.id", ondelete="CASCADE"),
         nullable=False,
-        index=True,
     )
     status: Mapped[str] = mapped_column(String(50), nullable=False)
-    total: Mapped[int] = mapped_column(Integer, nullable=False)
-    passed: Mapped[int] = mapped_column(Integer, nullable=False)
-    failed: Mapped[int] = mapped_column(Integer, nullable=False)
-    skipped: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    duration: Mapped[float] = mapped_column(nullable=False)
-    stdout: Mapped[str | None] = mapped_column(Text, nullable=True)
-    stderr: Mapped[str | None] = mapped_column(Text, nullable=True)
+    total: Mapped[int] = mapped_column(Integer, default=0)
+    passed: Mapped[int] = mapped_column(Integer, default=0)
+    failed: Mapped[int] = mapped_column(Integer, default=0)
+    skipped: Mapped[int] = mapped_column(Integer, default=0)
+    duration: Mapped[float] = mapped_column(Float, default=0.0)
+    stdout: Mapped[str] = mapped_column(Text(), default="")
+    stderr: Mapped[str] = mapped_column(Text(), default="")
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
+        DateTime(timezone=True), default=utcnow
     )
 
     session: Mapped[AgentSession] = relationship(back_populates="test_results")
