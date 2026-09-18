@@ -96,7 +96,7 @@ class NemotronProvider(ModelProvider):
             )
         if not isinstance(content, str):
             return json.dumps(content)
-        fenced = re.match(r"```(?:json)?\s*(.*?)\s*```", content, re.DOTALL)
+        fenced = re.search(r"```(?:json)?\s*(.*?)\s*```", content, re.DOTALL)
         return fenced.group(1) if fenced else content
 
     def _validate_base_url(self, base_url: str) -> None:

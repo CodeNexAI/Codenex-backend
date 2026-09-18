@@ -80,7 +80,13 @@ class Orchestrator:
                     debug_result = await self.debugger.analyze_failure(result)
                     fix_actions = await self.coder.generate_fix_actions(debug_result, plan)
                     self.coder.apply_actions(project.workspace_path, fix_actions)
-                    await session_service.add_event(session_id, "debugging", "completed", debug_result.fix)
+                    await session_service.add_event(
+                        session_id,
+                        "debugging",
+                        "completed",
+                        debug_result.fix,
+                        {"actions": len(fix_actions)},
+                    )
             except Exception:  # pragma: no cover - defensive path
                 logger.exception("orchestrator_failure", extra={"session_id": session_id})
                 session_service.update_session(session_id, "failed", completed=True)
