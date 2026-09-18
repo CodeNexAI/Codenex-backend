@@ -33,7 +33,10 @@ class Settings(BaseSettings):
     sandbox_timeout: int = Field(default=60, alias="SANDBOX_TIMEOUT")
     max_agent_retries: int = Field(default=3, alias="MAX_AGENT_RETRIES")
     nebius_api_key: str = Field(default="", alias="NEBIUS_API_KEY")
-    nebius_base_url: str = Field(default="", alias="NEBIUS_BASE_URL")
+    nebius_base_url: str = Field(
+        default="https://api.tokenfactory.nebius.com/v1",
+        alias="NEBIUS_BASE_URL",
+    )
     nemotron_model: str = Field(default="", alias="NEMOTRON_MODEL")
 
     @property

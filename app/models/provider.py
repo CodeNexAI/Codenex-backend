@@ -6,6 +6,10 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 
+class ModelProviderError(RuntimeError):
+    """Raised when a model provider cannot produce a usable response."""
+
+
 class ModelProvider(ABC):
     """Contract used by CodeNex components to request model output."""
 

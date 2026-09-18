@@ -13,6 +13,8 @@ from app.agents.tester import TesterAgent
 from app.config.settings import Settings, get_settings
 from app.database.database import get_db, get_session_factory
 from app.models.mock_provider import MockModelProvider
+from app.models.nebius_nemotron import NebiusNemotronProvider
+from app.models.provider import ModelProvider
 from app.sandbox.executor import DockerSandboxExecutor
 from app.sandbox.runner import SandboxRunner
 from app.services.project_service import ProjectService
@@ -55,8 +57,15 @@ SandboxRunnerDependency = Annotated[SandboxRunner, Depends(get_sandbox_runner)]
 SessionServiceDependency = Annotated[SessionService, Depends(get_session_service)]
 
 
+def get_model_provider(settings: SettingsDependency) -> ModelProvider:
+    """Use Nebius only when every required integration setting is present."""
+    if settings.nebius_api_key and settings.nebius_base_url and settings.nemotron_model:
+        return NebiusNemotronProvider(settings)
+    return MockModelProvider()
+
+
 def get_orchestrator(settings: SettingsDependency) -> Orchestrator:
-    provider = MockModelProvider()
+    provider = get_model_provider(settings)
     runner = get_sandbox_runner(settings)
     return Orchestrator(
         session_factory=get_session_factory(),

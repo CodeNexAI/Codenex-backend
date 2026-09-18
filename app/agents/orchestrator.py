@@ -56,7 +56,11 @@ class Orchestrator:
                     "planning",
                     "completed",
                     "Implementation plan created.",
-                    {"files": plan.files},
+                    {
+                        "files": [
+                            planned_file.model_dump() for planned_file in plan.files
+                        ]
+                    },
                 )
 
                 actions = await self.coder.generate_actions(plan)
