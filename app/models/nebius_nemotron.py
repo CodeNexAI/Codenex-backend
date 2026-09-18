@@ -66,8 +66,16 @@ class NebiusNemotronProvider(ModelProvider):
         content = await self.generate_response(
             f"{prompt}\n\nReturn only a JSON object matching the {schema_name} schema."
         )
+        cleaned = content.strip()
+        if cleaned.startswith("```"):
+            lines = cleaned.splitlines()
+            if lines and lines[0].startswith("```"):
+                lines = lines[1:]
+            if lines and lines[-1].startswith("```"):
+                lines = lines[:-1]
+            cleaned = "\n".join(lines).strip()
         try:
-            decoded = json.loads(content)
+            decoded = json.loads(cleaned)
         except json.JSONDecodeError as exc:
             raise ModelProviderError("Model returned invalid JSON.") from exc
         if not isinstance(decoded, dict):

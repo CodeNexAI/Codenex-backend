@@ -168,3 +168,45 @@ def test_nebius_provider_parses_structured_json(
     )
 
     assert result == {"project_type": "fastapi"}
+
+
+def test_nebius_provider_parses_structured_json_with_code_fences(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Structured requests strip markdown fences before JSON decoding."""
+
+    class FakeResponse:
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict[str, object]:
+            return {
+                "choices": [
+                    {"message": {"content": "```json\n{\"project_type\":\"fastapi\"}\n```"}}
+                ]
+            }
+
+    class FakeAsyncClient:
+        def __init__(self, *, timeout: float) -> None:
+            pass
+
+        async def __aenter__(self) -> "FakeAsyncClient":
+            return self
+
+        async def __aexit__(self, *_: object) -> None:
+            return None
+
+        async def post(self, *_: object, **__: object) -> FakeResponse:
+            return FakeResponse()
+
+    monkeypatch.setattr(httpx, "AsyncClient", FakeAsyncClient)
+    result = asyncio.run(
+        NebiusNemotronProvider(configured_settings()).generate_structured_response(
+            "Plan a project",
+            "implementation_plan",
+            {},
+        )
+    )
+
+    assert result == {"project_type": "fastapi"}
+
