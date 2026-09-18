@@ -1,3 +1,5 @@
+from app.models.mock_provider import MockModelProvider
+from app.models.provider import ModelProvider
 from app.models.schemas import (
     AgentEvent,
     AgentRequest,
@@ -30,4 +32,6 @@ __all__ = [
     "SandboxResult",
     "TestRequest",
     "TestResult",
+    "MockModelProvider",
+    "ModelProvider",
 ]

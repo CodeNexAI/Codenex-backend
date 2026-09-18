@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.models.nemotron import ModelProvider
+from app.models.provider import ModelProvider
 from app.models.schemas import CodeAction, DebugResult, ImplementationPlan
 from app.tools.file_tools import create_file, delete_file, update_file
 
@@ -16,7 +16,7 @@ class CoderAgent:
                 for path in plan.files
             ]
         }
-        payload = await self.provider.generate_structured(
+        payload = await self.provider.generate_structured_response(
             prompt=f"Generate code actions for files: {plan.files}",
             schema_name="code_actions",
             fallback=fallback,

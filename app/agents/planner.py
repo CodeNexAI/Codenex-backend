@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.models.nemotron import ModelProvider
+from app.models.provider import ModelProvider
 from app.models.schemas import ImplementationPlan
 
 
@@ -15,7 +15,7 @@ class PlannerAgent:
             files=["README.md"],
             dependencies=[],
         )
-        payload = await self.provider.generate_structured(
+        payload = await self.provider.generate_structured_response(
             prompt=f"Create an implementation plan for: {requirement}",
             schema_name="implementation_plan",
             fallback=fallback.model_dump(),

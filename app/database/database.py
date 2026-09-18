@@ -4,13 +4,13 @@ from __future__ import annotations
 
 from collections.abc import Generator
 
-from sqlalchemy import create_engine
+from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.database.models import Base
 
-_engine = None
-_SessionLocal = None
+_engine: Engine | None = None
+_SessionLocal: sessionmaker[Session] | None = None
 
 
 def configure_database(database_url: str) -> None:
@@ -28,7 +28,7 @@ def configure_database(database_url: str) -> None:
     )
 
 
-def get_session_factory() -> sessionmaker:
+def get_session_factory() -> sessionmaker[Session]:
     """Return the configured session factory."""
     if _SessionLocal is None:
         raise RuntimeError("Database is not configured.")

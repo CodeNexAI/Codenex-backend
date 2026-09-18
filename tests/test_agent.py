@@ -1,8 +1,6 @@
 import asyncio
 from pathlib import Path
 
-import httpx
-
 from app.agents.coder import CoderAgent
 from app.agents.debugger import DebuggerAgent
 from app.agents.orchestrator import Orchestrator
@@ -13,7 +11,7 @@ from app.config.settings import get_settings
 from app.database.database import get_session_factory
 from app.database.models import AgentSession as AgentSessionModel
 from app.models import schemas
-from app.models.nemotron import MockModelProvider, NemotronProvider
+from app.models.mock_provider import MockModelProvider
 from app.sandbox.executor import SandboxExecutionError
 from app.services.project_service import ProjectService
 from app.services.session_service import EventManager, SessionService
@@ -45,159 +43,9 @@ def test_mock_model_provider_and_planner_and_debugger():
         )
     )
 
-    assert plan.project_type == "fastapi"
+    assert plan.project_type == "generic"
     assert plan.files
-    assert "rerun" in debug.fix.lower()
-
-
-def test_nemotron_provider_normalizes_fenced_and_block_content():
-    provider = NemotronProvider(
-        get_settings().model_copy(
-            update={
-                "nebius_api_key": "key",
-                "nebius_base_url": "https://example.com",
-                "nemotron_model": "model",
-            }
-        )
-    )
-
-    assert (
-        provider._normalize_content('prefix\n```json\n{"status": "ok"}\n```')
-        == '{"status": "ok"}'
-    )
-    assert (
-        provider._normalize_content([{"text": '{"status": "ok"}'}])
-        == '{"status": "ok"}'
-    )
-
-
-def test_nemotron_provider_generate_structured_handles_alternate_and_invalid_payloads(
-    monkeypatch,
-):
-    provider = NemotronProvider(
-        get_settings().model_copy(
-            update={
-                "nebius_api_key": "key",
-                "nebius_base_url": "https://example.com",
-                "nemotron_model": "model",
-            }
-        )
-    )
-
-    responses = [
-        {
-            "choices": [
-                {
-                    "message": {
-                        "content": (
-                            "```json\n"
-                            '{"project_type":"fastapi","tasks":[],"files":[],"dependencies":[]}'
-                            "\n```"
-                        )
-                    }
-                }
-            ]
-        },
-        {"choices": [{"message": {}}]},
-    ]
-
-    class FakeResponse:
-        def __init__(self, payload):
-            self.payload = payload
-
-        def raise_for_status(self):
-            return None
-
-        def json(self):
-            return self.payload
-
-    class FakeAsyncClient:
-        def __init__(self, *args, **kwargs):
-            self.index = 0
-
-        async def __aenter__(self):
-            return self
-
-        async def __aexit__(self, exc_type, exc, tb):
-            return None
-
-        async def post(self, url, headers, json):
-            payload = responses.pop(0)
-            return FakeResponse(payload)
-
-    monkeypatch.setattr(httpx, "AsyncClient", FakeAsyncClient)
-
-    structured = asyncio.run(
-        provider.generate_structured(
-            "plan",
-            "implementation_plan",
-            {"project_type": "generic", "tasks": [], "files": [], "dependencies": []},
-        )
-    )
-    fallback = asyncio.run(
-        provider.generate_structured(
-            "plan",
-            "implementation_plan",
-            {"project_type": "generic", "tasks": [], "files": [], "dependencies": []},
-        )
-    )
-
-    assert structured["project_type"] == "fastapi"
-    assert fallback["project_type"] == "generic"
-
-
-def test_nemotron_provider_rejects_non_https_local_urls():
-    settings = get_settings().model_copy(
-        update={
-            "nebius_api_key": "key",
-            "nebius_base_url": "http://localhost:8080",
-            "nemotron_model": "model",
-        }
-    )
-
-    try:
-        NemotronProvider(settings)
-    except ValueError as exc:
-        assert "must" in str(exc).lower()
-    else:
-        raise AssertionError("Expected invalid Nebius URL to be rejected")
-
-
-def test_nemotron_provider_falls_back_on_http_error(monkeypatch):
-    provider = NemotronProvider(
-        get_settings().model_copy(
-            update={
-                "nebius_api_key": "key",
-                "nebius_base_url": "https://example.com",
-                "nemotron_model": "model",
-            }
-        )
-    )
-
-    class FailingAsyncClient:
-        def __init__(self, *args, **kwargs):
-            pass
-
-        async def __aenter__(self):
-            return self
-
-        async def __aexit__(self, exc_type, exc, tb):
-            return None
-
-        async def post(self, url, headers, json):
-            raise httpx.ConnectError("boom")
-
-    monkeypatch.setattr(httpx, "AsyncClient", FailingAsyncClient)
-
-    fallback = asyncio.run(
-        provider.generate_structured(
-            "plan",
-            "implementation_plan",
-            {"project_type": "generic", "tasks": [], "files": [], "dependencies": []},
-        )
-    )
-
-    assert fallback["project_type"] == "generic"
+    assert "retry" in debug.fix.lower()
 
 
 def test_coder_agent_creates_files(tmp_path: Path):

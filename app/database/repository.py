@@ -6,6 +6,8 @@ from typing import Generic, TypeVar
 
 from sqlalchemy.orm import Session
 
+from app.database.models import Project
+
 T = TypeVar("T")
 
 
@@ -34,4 +36,31 @@ class Repository(Generic[T]):
     def delete(self, instance: T) -> None:
         """Delete an instance."""
         self.db.delete(instance)
+        self.db.commit()
+
+
+class ProjectRepository:
+    """Database operations for project records."""
+
+    def __init__(self, db: Session) -> None:
+        self.db = db
+
+    def add(self, project: Project) -> Project:
+        """Persist and refresh a project."""
+        self.db.add(project)
+        self.db.commit()
+        self.db.refresh(project)
+        return project
+
+    def list(self) -> list[Project]:
+        """Return projects with newest entries first."""
+        return list(self.db.query(Project).order_by(Project.created_at.desc()).all())
+
+    def get(self, project_id: str) -> Project | None:
+        """Return a project by ID."""
+        return self.db.get(Project, project_id)
+
+    def delete(self, project: Project) -> None:
+        """Remove a project record."""
+        self.db.delete(project)
         self.db.commit()

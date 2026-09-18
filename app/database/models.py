@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -101,7 +102,11 @@ class AgentEvent(Base):
     stage: Mapped[str] = mapped_column(String(100), nullable=False)
     status: Mapped[str] = mapped_column(String(50), nullable=False)
     message: Mapped[str] = mapped_column(Text(), nullable=False)
-    event_metadata: Mapped[dict | None] = mapped_column("metadata", JSON, nullable=True)
+    event_metadata: Mapped[dict[str, Any] | None] = mapped_column(
+        "metadata",
+        JSON,
+        nullable=True,
+    )
     timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     session: Mapped[AgentSession] = relationship(back_populates="events")
