@@ -64,9 +64,8 @@ class AgentSessionResponse(BaseModel):
 
 
 class SandboxRequest(BaseModel):
-    workspace_path: str = Field(min_length=1)
-    task: Literal["pytest", "python", "list_files"] = "pytest"
-    args: list[str] = Field(default_factory=list)
+    project_id: str = Field(min_length=1)
+    task: Literal["pytest"] = "pytest"
 
 
 class SandboxResult(BaseModel):

@@ -8,8 +8,8 @@ class SandboxRunner:
     def __init__(self, executor: DockerSandboxExecutor) -> None:
         self.executor = executor
 
-    def run_task(self, workspace_path: str, task: str, args: list[str] | None = None) -> SandboxResult:
-        return self.executor.run(workspace_path=workspace_path, task=task, args=args or [])
+    def run_task(self, workspace_path: str, task: str) -> SandboxResult:
+        return self.executor.run(workspace_path=workspace_path, task=task)
 
     def run_tests(self, workspace_path: str) -> SandboxResult:
-        return self.run_task(workspace_path=workspace_path, task="pytest", args=["-q"])
+        return self.run_task(workspace_path=workspace_path, task="pytest")

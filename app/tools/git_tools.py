@@ -30,7 +30,11 @@ class GitTools:
         return self._run(workspace_path, "init").stdout
 
     def add(self, workspace_path: str, *paths: str) -> str:
-        return self._run(workspace_path, "add", *paths).stdout
+        workspace = ensure_within_base(self.workspace_root, workspace_path)
+        validated_paths = []
+        for path in paths:
+            validated_paths.append(str(ensure_within_base(workspace, Path(workspace) / path).relative_to(workspace)))
+        return self._run(workspace_path, "add", *validated_paths).stdout
 
     def commit(self, workspace_path: str, message: str) -> str:
         return self._run(workspace_path, "commit", "-m", message).stdout

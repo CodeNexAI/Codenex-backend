@@ -9,7 +9,7 @@ from app.agents.tester import TesterAgent as BackendTesterAgent
 from app.api.dependencies import get_orchestrator
 from app.config.settings import get_settings
 from app.database.database import get_session_factory
-from app.models.nemotron import MockModelProvider
+from app.models.nemotron import MockModelProvider, NemotronProvider
 from app.models import schemas
 from app.services.project_service import ProjectService
 from app.services.session_service import EventManager, SessionService
@@ -40,6 +40,21 @@ def test_mock_model_provider_and_planner_and_debugger():
     assert plan.project_type == "fastapi"
     assert plan.files
     assert "rerun" in debug.fix.lower()
+
+
+def test_nemotron_provider_normalizes_fenced_and_block_content():
+    provider = NemotronProvider(
+        get_settings().model_copy(
+            update={
+                "nebius_api_key": "key",
+                "nebius_base_url": "https://example.com",
+                "nemotron_model": "model",
+            }
+        )
+    )
+
+    assert provider._normalize_content("```json\n{\"status\": \"ok\"}\n```") == "{\"status\": \"ok\"}"
+    assert provider._normalize_content([{"text": "{\"status\": \"ok\"}"}]) == "{\"status\": \"ok\"}"
 
 
 def test_coder_agent_creates_files(tmp_path: Path):

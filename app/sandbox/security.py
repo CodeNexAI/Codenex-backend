@@ -7,7 +7,7 @@ class SandboxSecurityError(ValueError):
     pass
 
 
-_ALLOWED_TASKS = {"pytest", "python", "list_files"}
+_ALLOWED_TASKS = {"pytest"}
 
 
 def ensure_within_base(base_path: str | Path, target_path: str | Path) -> Path:

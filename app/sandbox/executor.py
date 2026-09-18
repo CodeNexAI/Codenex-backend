@@ -19,13 +19,14 @@ class DockerSandboxExecutor:
         self.timeout = timeout
         self.workspace_root = workspace_root
 
-    def run(self, workspace_path: str, task: str, args: list[str] | None = None) -> SandboxResult:
+    def run(self, workspace_path: str, task: str) -> SandboxResult:
         safe_task = validate_task(task)
         workspace = ensure_within_base(self.workspace_root, workspace_path)
         if shutil.which("docker") is None:
             raise SandboxExecutionError("Docker is required for sandbox execution.")
 
-        command = [safe_task, *(args or [])]
+        command_map = {"pytest": ["pytest", "-q"]}
+        command = command_map[safe_task]
         docker_command = [
             "docker",
             "run",

@@ -1,19 +1,22 @@
 from fastapi import APIRouter, HTTPException
 
-from app.api.dependencies import SettingsDependency, get_sandbox_runner
+from app.api.dependencies import DatabaseDependency, SettingsDependency, get_sandbox_runner
 from app.models.schemas import SandboxRequest, SandboxResult
 from app.sandbox.executor import SandboxExecutionError
-from app.sandbox.security import SandboxSecurityError, ensure_within_base
+from app.sandbox.security import SandboxSecurityError
+from app.services.project_service import ProjectService
 
 router = APIRouter(prefix="/api/sandbox", tags=["sandbox"])
 
 
 @router.post("/run", response_model=SandboxResult)
-async def run_sandbox(payload: SandboxRequest, settings: SettingsDependency) -> SandboxResult:
+async def run_sandbox(payload: SandboxRequest, db: DatabaseDependency, settings: SettingsDependency) -> SandboxResult:
     runner = get_sandbox_runner(settings)
+    project = ProjectService(db, settings).get_project(payload.project_id)
+    if project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
     try:
-        ensure_within_base(settings.workspace_root, payload.workspace_path)
-        return runner.run_task(payload.workspace_path, payload.task, payload.args)
+        return runner.run_task(project.workspace_path, payload.task)
     except SandboxSecurityError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except SandboxExecutionError as exc:

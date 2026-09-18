@@ -6,7 +6,7 @@ from app.models.schemas import SandboxResult, TestResult
 
 __test__ = False
 
-_SUMMARY_RE = re.compile(r"(?:(?P<failed>\d+) failed)?(?:, )?(?:(?P<passed>\d+) passed)?(?:, )?(?:(?P<skipped>\d+) skipped)?")
+_COUNT_RE = re.compile(r"(?P<count>\d+)\s+(?P<label>failed|passed|skipped)")
 
 
 def parse_test_result(result: SandboxResult) -> TestResult:
@@ -14,11 +14,11 @@ def parse_test_result(result: SandboxResult) -> TestResult:
     passed = failed = skipped = 0
     for line in output.splitlines():
         if "passed" in line or "failed" in line or "skipped" in line:
-            match = _SUMMARY_RE.search(line)
-            if match:
-                passed = int(match.group("passed") or 0)
-                failed = int(match.group("failed") or 0)
-                skipped = int(match.group("skipped") or 0)
+            counts = {match.group("label"): int(match.group("count")) for match in _COUNT_RE.finditer(line)}
+            if counts:
+                passed = counts.get("passed", 0)
+                failed = counts.get("failed", 0)
+                skipped = counts.get("skipped", 0)
     total = passed + failed + skipped
     status = "passed" if result.exit_code == 0 else ("failed" if result.status == "failed" else "error")
     return TestResult(

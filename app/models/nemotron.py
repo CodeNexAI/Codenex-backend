@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from abc import ABC, abstractmethod
 from typing import Any
 
@@ -74,7 +75,18 @@ class NemotronProvider(ModelProvider):
             response = await client.post(self._settings.nebius_base_url, headers=headers, json=payload)
             response.raise_for_status()
         content = response.json()["choices"][0]["message"]["content"]
-        return json.loads(content)
+        return json.loads(self._normalize_content(content))
+
+    def _normalize_content(self, content: Any) -> str:
+        if isinstance(content, list):
+            content = "".join(
+                item.get("text", "") if isinstance(item, dict) else str(item)
+                for item in content
+            )
+        if not isinstance(content, str):
+            return json.dumps(content)
+        fenced = re.match(r"```(?:json)?\s*(.*?)\s*```", content, re.DOTALL)
+        return fenced.group(1) if fenced else content
 
 
 def build_model_provider(settings: Settings) -> ModelProvider:

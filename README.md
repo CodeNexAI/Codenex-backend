@@ -53,7 +53,7 @@ Configure the following environment variables to enable the real provider:
 - `NEBIUS_BASE_URL`
 - `NEMOTRON_MODEL`
 
-See `docs/nebuis-integration.md`.
+See `docs/nebius-integration.md`.
 
 ## Sandbox
 
