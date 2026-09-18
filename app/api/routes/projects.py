@@ -11,7 +11,14 @@ from app.services.project_service import ProjectService
 router = APIRouter(prefix="/api/projects", tags=["projects"])
 
 
-@router.post("", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=ProjectResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a project",
+    description="Creates a project workspace record without generating any code.",
+    responses={401: {"description": "Missing or invalid bearer token."}},
+)
 async def create_project(
     payload: ProjectCreate,
     db: DatabaseDependency,
@@ -22,7 +29,12 @@ async def create_project(
     return ProjectResponse.model_validate(service.create_project(payload))
 
 
-@router.get("", response_model=list[ProjectResponse])
+@router.get(
+    "",
+    response_model=list[ProjectResponse],
+    summary="List projects",
+    responses={401: {"description": "Missing or invalid bearer token."}},
+)
 async def list_projects(
     db: DatabaseDependency, settings: SettingsDependency, _auth: AuthenticatedDependency
 ) -> list[ProjectResponse]:
@@ -32,7 +44,15 @@ async def list_projects(
     ]
 
 
-@router.get("/{project_id}", response_model=ProjectResponse)
+@router.get(
+    "/{project_id}",
+    response_model=ProjectResponse,
+    summary="Get a project",
+    responses={
+        401: {"description": "Missing or invalid bearer token."},
+        404: {"description": "Project not found."},
+    },
+)
 async def get_project(
     project_id: str,
     db: DatabaseDependency,
@@ -46,7 +66,16 @@ async def get_project(
     return ProjectResponse.model_validate(project)
 
 
-@router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{project_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete a project",
+    description="Removes the project record and its assigned workspace.",
+    responses={
+        401: {"description": "Missing or invalid bearer token."},
+        404: {"description": "Project not found."},
+    },
+)
 async def delete_project(
     project_id: str,
     db: DatabaseDependency,

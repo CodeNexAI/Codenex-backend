@@ -61,6 +61,7 @@ class AgentSessionResponse(BaseModel):
     id: str
     project_id: str
     status: str
+    current_stage: str | None = None
     retry_count: int
     started_at: datetime
     completed_at: datetime | None
@@ -83,6 +84,7 @@ class SandboxResult(BaseModel):
 
 class TestRequest(BaseModel):
     project_id: str = Field(min_length=1)
+    test_command: Literal["pytest"] = "pytest"
 
 
 class TestResult(BaseModel):

@@ -138,6 +138,7 @@ class SessionService:
             id=session.id,
             project_id=session.project_id,
             status=session.status,
+            current_stage=session.events[-1].stage if session.events else None,
             retry_count=session.retry_count,
             started_at=session.started_at,
             completed_at=session.completed_at,

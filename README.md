@@ -70,22 +70,34 @@ See `docs/security.md`.
 
 ## API
 
-Implemented foundation endpoints:
+Interactive OpenAPI documentation is available at `/docs`; OpenAPI JSON is
+available at `/openapi.json`.
 
-- `GET /health`
-- `POST /api/projects`
-- `GET /api/projects`
-- `GET /api/projects/{project_id}`
-- `DELETE /api/projects/{project_id}`
-- `POST /api/agent/run`
-- `GET /api/agent/{session_id}`
-- `POST /api/sandbox/run`
-- `POST /api/tests/run`
-- `GET /api/tests/{session_id}`
+`GET /health` returns `{"status":"ok","service":"codenex-backend"}` and does
+not require authentication. Every `/api/*` endpoint requires
+`Authorization: Bearer <API_ACCESS_TOKEN>`. Missing or invalid credentials
+return `401`; missing token configuration returns `503`.
+
+| Endpoint | Purpose | Success | Additional errors |
+| --- | --- | --- | --- |
+| `POST /api/projects` | Create a project record from `name`, optional `description`, and supported `project_type`. | `201 ProjectResponse` | `422` validation |
+| `GET /api/projects` | List project records. | `200 ProjectResponse[]` | — |
+| `GET /api/projects/{project_id}` | Retrieve one project. | `200 ProjectResponse` | `404` not found |
+| `DELETE /api/projects/{project_id}` | Remove a project and its assigned workspace. | `204` | `404` not found |
+| `POST /api/agent/run` | Schedule a requirement workflow in the background. | `202 {session_id, status:"started"}` | `404` project not found, `422` validation |
+| `GET /api/agent/{session_id}` | Read session status, retry count, timestamps, and persisted events. | `200 AgentSessionResponse` | `404` not found |
+| `POST /api/sandbox/run` | Run the supported `task` (currently `pytest`) in Docker. | `200 SandboxResult` | `400` unsafe/unsupported task, `404` project, `503` sandbox |
+| `POST /api/tests/run` | Run allow-listed `test_command` (currently `pytest`) in Docker and persist the result. | `201 TestResult` | `404` project, `503` sandbox |
+| `GET /api/tests/{session_id}` | Retrieve the latest persisted test result. | `200 TestResult` | `404` not found |
 
 ## WebSocket
 
-- `GET /ws/agent/{session_id}` upgrades to a WebSocket connection and streams session events.
+`/ws/agent/{session_id}` upgrades an authenticated bearer-token connection and
+streams only that session's persisted and live events. Event payloads include
+`session_id`, `stage`, `status`, `message`, timestamp, and optional metadata.
+Connections missing a valid token close with policy-violation code `1008`.
+The endpoint never exposes workspace paths, credentials, or arbitrary command
+execution.
 
 ## Tech Stack
 
