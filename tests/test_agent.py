@@ -120,6 +120,60 @@ def test_nemotron_provider_generate_structured_handles_alternate_and_invalid_pay
     assert fallback["project_type"] == "generic"
 
 
+def test_nemotron_provider_rejects_non_https_local_urls():
+    settings = get_settings().model_copy(
+        update={
+            "nebius_api_key": "key",
+            "nebius_base_url": "http://localhost:8080",
+            "nemotron_model": "model",
+        }
+    )
+
+    try:
+        NemotronProvider(settings)
+    except ValueError as exc:
+        assert "must" in str(exc).lower()
+    else:
+        raise AssertionError("Expected invalid Nebius URL to be rejected")
+
+
+def test_nemotron_provider_falls_back_on_http_error(monkeypatch):
+    provider = NemotronProvider(
+        get_settings().model_copy(
+            update={
+                "nebius_api_key": "key",
+                "nebius_base_url": "https://example.com",
+                "nemotron_model": "model",
+            }
+        )
+    )
+
+    class FailingAsyncClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return None
+
+        async def post(self, url, headers, json):
+            raise httpx.ConnectError("boom")
+
+    monkeypatch.setattr(httpx, "AsyncClient", FailingAsyncClient)
+
+    fallback = asyncio.run(
+        provider.generate_structured(
+            "plan",
+            "implementation_plan",
+            {"project_type": "generic", "tasks": [], "files": [], "dependencies": []},
+        )
+    )
+
+    assert fallback["project_type"] == "generic"
+
+
 def test_coder_agent_creates_files(tmp_path: Path):
     provider = MockModelProvider()
     plan = asyncio.run(PlannerAgent(provider).plan("Create a FastAPI student API"))

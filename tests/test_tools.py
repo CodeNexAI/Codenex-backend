@@ -43,6 +43,21 @@ def test_parse_test_result_handles_any_pytest_order():
     assert parsed.skipped == 3
 
 
+def test_parse_test_result_preserves_execution_errors():
+    result = schemas.SandboxResult(
+        status="failed",
+        exit_code=124,
+        stdout="",
+        stderr="timeout",
+        duration=60.0,
+        error_message="Sandbox execution timed out.",
+    )
+
+    parsed = parse_test_result(result)
+
+    assert parsed.status == "error"
+
+
 def test_git_add_blocks_path_traversal(tmp_path: Path):
     (tmp_path / "workspace").mkdir()
     tools = GitTools(str(tmp_path))

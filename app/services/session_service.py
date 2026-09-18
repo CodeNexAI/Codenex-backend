@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Any
@@ -15,23 +16,31 @@ from app.models.schemas import AgentEvent, AgentSessionResponse, TestResult
 class EventManager:
     def __init__(self) -> None:
         self._connections: dict[str, set[WebSocket]] = defaultdict(set)
+        self._lock = asyncio.Lock()
 
     async def connect(self, session_id: str, websocket: WebSocket) -> None:
         await websocket.accept()
-        self._connections[session_id].add(websocket)
+        async with self._lock:
+            self._connections[session_id].add(websocket)
 
-    def disconnect(self, session_id: str, websocket: WebSocket) -> None:
-        if session_id in self._connections:
-            self._connections[session_id].discard(websocket)
-            if not self._connections[session_id]:
-                self._connections.pop(session_id, None)
+    async def disconnect(self, session_id: str, websocket: WebSocket) -> None:
+        async with self._lock:
+            if session_id in self._connections:
+                self._connections[session_id].discard(websocket)
+                if not self._connections[session_id]:
+                    self._connections.pop(session_id, None)
 
     async def broadcast(self, session_id: str, payload: dict[str, Any]) -> None:
-        for websocket in list(self._connections.get(session_id, set())):
+        async with self._lock:
+            recipients = list(self._connections.get(session_id, set()))
+        failed: list[WebSocket] = []
+        for websocket in recipients:
             try:
                 await websocket.send_json(payload)
             except Exception:
-                self.disconnect(session_id, websocket)
+                failed.append(websocket)
+        for websocket in failed:
+            await self.disconnect(session_id, websocket)
 
 
 class SessionService:

@@ -44,7 +44,9 @@ def create_app() -> FastAPI:
         return JSONResponse(status_code=422, content={"error": {"code": "INVALID_REQUEST", "message": "Invalid request."}})
 
     @app.exception_handler(Exception)
-    async def generic_exception_handler(_: Request, exc: Exception) -> JSONResponse:
+    async def generic_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+        if request.scope["type"] != "http":
+            raise exc
         logger.exception("unhandled_exception")
         return JSONResponse(status_code=500, content={"error": {"code": "INTERNAL_ERROR", "message": "An internal error occurred."}})
 
@@ -74,7 +76,7 @@ def create_app() -> FastAPI:
         except WebSocketDisconnect:
             pass
         finally:
-            event_manager.disconnect(session_id, websocket)
+            await event_manager.disconnect(session_id, websocket)
 
     return app
 

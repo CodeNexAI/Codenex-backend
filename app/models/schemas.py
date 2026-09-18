@@ -39,6 +39,11 @@ class AgentRequest(BaseModel):
     requirement: str = Field(min_length=1)
 
 
+class AgentRunResponse(BaseModel):
+    session_id: str
+    status: Literal["started"]
+
+
 class AgentEvent(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

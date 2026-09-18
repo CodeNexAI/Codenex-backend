@@ -85,4 +85,4 @@ class Orchestrator:
                 logger.exception("orchestrator_failure", extra={"session_id": session_id})
                 session_service.update_session(session_id, "failed", completed=True)
                 await session_service.add_event(session_id, "completed", "failed", "Agent execution failed.")
-                raise
+                return

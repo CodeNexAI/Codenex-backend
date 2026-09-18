@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import json
+import ipaddress
 import re
 from abc import ABC, abstractmethod
 from typing import Any
+from urllib.parse import urlparse
 
 import httpx
 
@@ -59,6 +61,7 @@ class NemotronProvider(ModelProvider):
     def __init__(self, settings: Settings) -> None:
         if not (settings.nebius_api_key and settings.nebius_base_url and settings.nemotron_model):
             raise ValueError("Nebius/Nemotron configuration is incomplete.")
+        self._validate_base_url(settings.nebius_base_url)
         self._settings = settings
 
     async def generate_structured(self, prompt: str, schema_name: str, fallback: dict[str, Any]) -> dict[str, Any]:
@@ -95,6 +98,20 @@ class NemotronProvider(ModelProvider):
             return json.dumps(content)
         fenced = re.match(r"```(?:json)?\s*(.*?)\s*```", content, re.DOTALL)
         return fenced.group(1) if fenced else content
+
+    def _validate_base_url(self, base_url: str) -> None:
+        parsed = urlparse(base_url)
+        if parsed.scheme != "https" or not parsed.hostname:
+            raise ValueError("Nebius base URL must be a valid HTTPS endpoint.")
+        hostname = parsed.hostname.lower()
+        if hostname in {"localhost", "127.0.0.1", "::1"}:
+            raise ValueError("Nebius base URL must not target a local endpoint.")
+        try:
+            address = ipaddress.ip_address(hostname)
+        except ValueError:
+            return
+        if address.is_private or address.is_loopback or address.is_link_local:
+            raise ValueError("Nebius base URL must not target a private endpoint.")
 
 
 def build_model_provider(settings: Settings) -> ModelProvider:

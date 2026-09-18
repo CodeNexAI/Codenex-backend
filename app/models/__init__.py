@@ -1,6 +1,7 @@
 from app.models.schemas import (
     AgentEvent,
     AgentRequest,
+    AgentRunResponse,
     AgentSessionResponse,
     CodeAction,
     DebugResult,
@@ -17,6 +18,7 @@ from app.models.schemas import (
 __all__ = [
     "AgentEvent",
     "AgentRequest",
+    "AgentRunResponse",
     "AgentSessionResponse",
     "CodeAction",
     "DebugResult",
