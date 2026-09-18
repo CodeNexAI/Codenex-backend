@@ -4,6 +4,8 @@ import re
 
 from app.models.schemas import SandboxResult, TestResult
 
+__test__ = False
+
 _SUMMARY_RE = re.compile(r"(?:(?P<failed>\d+) failed)?(?:, )?(?:(?P<passed>\d+) passed)?(?:, )?(?:(?P<skipped>\d+) skipped)?")
 
 
