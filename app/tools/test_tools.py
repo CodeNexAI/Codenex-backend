@@ -45,4 +45,5 @@ def parse_test_result(result: SandboxResult) -> TestResult:
         duration=result.duration,
         stdout=result.stdout,
         stderr=result.stderr,
+        exit_code=result.exit_code,
     )

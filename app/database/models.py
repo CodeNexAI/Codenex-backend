@@ -134,6 +134,7 @@ class TestResult(Base):
     duration: Mapped[float] = mapped_column(Float, default=0.0)
     stdout: Mapped[str] = mapped_column(Text(), default="")
     stderr: Mapped[str] = mapped_column(Text(), default="")
+    exit_code: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow
     )

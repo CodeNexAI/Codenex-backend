@@ -26,7 +26,10 @@ class FakeRunner:
 
 
 class FailingTester:
-    async def run_tests(self, workspace_path: str) -> schemas.TestResult:
+    async def run_tests(
+        self, workspace_path: str, project_type: str = "python"
+    ) -> schemas.TestResult:
+        del workspace_path, project_type
         return schemas.TestResult(
             status="failed", total=1, passed=0, failed=1, stderr="boom"
         )
@@ -37,9 +40,12 @@ def test_mock_model_provider_and_planner_and_debugger():
     plan = asyncio.run(PlannerAgent(provider).plan("Create a FastAPI student API"))
     debug = asyncio.run(
         DebuggerAgent(provider).analyze_failure(
+            "Create a FastAPI student API",
+            plan,
+            {},
             schemas.TestResult(
                 status="failed", total=1, failed=1, passed=0, stderr="NameError"
-            )
+            ),
         )
     )
 
