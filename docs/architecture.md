@@ -1,23 +1,21 @@
 # Architecture
 
-## Current foundation
+CodeNex Backend is the execution and orchestration layer for CodeNex AI.
 
-The initial CodeNex backend exposes a small FastAPI service with a health
-endpoint. Runtime settings are read from the environment through
-`pydantic-settings`, keeping deployment configuration separate from source
-code.
+## High-Level Flow
 
-```mermaid
-flowchart LR
-    Client -->|HTTP| API[FastAPI application]
-    API --> Health["GET /health"]
-    API --> Settings[Environment configuration]
-```
+Frontend → REST API / WebSocket → Backend API → Orchestrator → Agents → Model Provider → Sandbox → Results
 
-## Planned direction
+## Backend Layers
 
-CodeNex is intended to take software requirements through an agentic workflow:
-understanding, planning, implementation, execution, testing, analysis, repair,
-and retesting. Agent orchestration, model-provider integrations, persistence,
-sandboxing, and frontend functionality are deliberately outside this
-repository-foundation milestone.
+- `app/api`: HTTP and WebSocket interfaces
+- `app/services`: project/session orchestration helpers and event broadcasting
+- `app/agents`: planner, coder, tester, debugger, and orchestrator
+- `app/models`: Pydantic schemas and model-provider abstractions
+- `app/database`: SQLAlchemy models and session management
+- `app/sandbox`: Docker execution boundary and task validation
+- `app/tools`: safe helpers for file, terminal, test, and Git operations
+
+## Frontend Boundary
+
+The frontend is a separate repository and communicates with this backend only through REST API and WebSocket. Model-provider calls stay inside the backend.

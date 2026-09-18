@@ -16,6 +16,10 @@ env/
 .env.*
 !.env.example
 
+# Databases and workspaces
+*.db
+workspaces/
+
 # Build artifacts
 build/
 dist/

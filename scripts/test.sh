@@ -1,4 +1,3 @@
-#!/usr/bin/env sh
-set -eu
-
-pytest "$@"
+#!/usr/bin/env bash
+set -euo pipefail
+pytest -q "$@"
