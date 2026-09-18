@@ -98,6 +98,7 @@ class TestResult(BaseModel):
     duration: float = 0.0
     stdout: str = ""
     stderr: str = ""
+    exit_code: int = 0
     created_at: datetime | None = None
 
 
@@ -121,16 +122,23 @@ class PlannedFile(BaseModel):
 
 
 class CodeAction(BaseModel):
-    action: Literal["create_file", "update_file", "delete_file"]
-    path: str
+    action: Literal["CREATE_FILE", "UPDATE_FILE", "DELETE_FILE"]
+    path: str = Field(min_length=1)
     content: str | None = None
 
 
 class ErrorReport(BaseModel):
     error: str
     root_cause: str
-    fix: str
+    explanation: str
 
 
 class DebugResult(ErrorReport):
-    pass
+    fix_actions: list[FixAction] = Field(default_factory=list)
+    fix: str = ""
+
+
+class FixAction(BaseModel):
+    action: Literal["CREATE_FILE", "UPDATE_FILE", "DELETE_FILE"]
+    path: str = Field(min_length=1)
+    description: str = Field(min_length=1)

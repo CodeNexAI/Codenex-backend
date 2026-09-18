@@ -10,6 +10,7 @@ from app.agents.planner import PlannerAgent
 from app.agents.tester import TesterAgent
 from app.services.project_service import ProjectService
 from app.services.session_service import EventManager, SessionService
+from app.tools.file_tools import FileToolError, list_files, read_file
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +36,7 @@ class Orchestrator:
         self.debugger = debugger
         self.max_retries = max_retries
 
-    async def run_session(self, session_id: str, requirement: str) -> None:
+    async def run_session(self, session_id: str, requirement: str) -> str:
         with self.session_factory() as db:
             session_service = SessionService(db, self.event_manager)
             session = session_service.get_session(session_id)
@@ -63,7 +64,10 @@ class Orchestrator:
                     },
                 )
 
-                actions = await self.coder.generate_actions(plan)
+                actions = await self.coder.generate_actions(
+                    requirement,
+                    plan,
+                )
                 self.coder.apply_actions(project.workspace_path, actions)
                 await session_service.add_event(
                     session_id,
@@ -77,7 +81,10 @@ class Orchestrator:
                     session_service.update_session(
                         session_id, "testing", retry_count=attempt
                     )
-                    result = await self.tester.run_tests(project.workspace_path)
+                    result = await self.tester.run_tests(
+                        project.workspace_path,
+                        project.project_type,
+                    )
                     session_service.save_test_result(session_id, result)
                     await session_service.add_event(
                         session_id,
@@ -96,7 +103,21 @@ class Orchestrator:
                             "completed",
                             "Project completed successfully.",
                         )
-                        return
+                        return "completed"
+                    if result.exit_code == 124:
+                        session_service.update_session(
+                            session_id,
+                            "timeout",
+                            retry_count=attempt,
+                            completed=True,
+                        )
+                        await session_service.add_event(
+                            session_id,
+                            "failed",
+                            "timeout",
+                            "Sandbox test execution timed out.",
+                        )
+                        return "timeout"
                     if attempt >= self.max_retries:
                         session_service.update_session(
                             session_id, "failed", retry_count=attempt, completed=True
@@ -112,7 +133,12 @@ class Orchestrator:
                     await session_service.add_event(
                         session_id, "debugging", "running", "Analyzing test failures..."
                     )
-                    debug_result = await self.debugger.analyze_failure(result)
+                    debug_result = await self.debugger.analyze_failure(
+                        requirement,
+                        plan,
+                        self._source_context(project.workspace_path),
+                        result,
+                    )
                     fix_actions = await self.coder.generate_fix_actions(
                         debug_result, plan
                     )
@@ -124,7 +150,7 @@ class Orchestrator:
                         debug_result.fix,
                         {"actions": len(fix_actions)},
                     )
-            except Exception:  # pragma: no cover - defensive path
+            except Exception:
                 logger.exception(
                     "orchestrator_failure", extra={"session_id": session_id}
                 )
@@ -132,4 +158,15 @@ class Orchestrator:
                 await session_service.add_event(
                     session_id, "completed", "failed", "Agent execution failed."
                 )
-                return
+                return "failed"
+
+    @staticmethod
+    def _source_context(workspace_path: str) -> dict[str, str]:
+        """Read bounded workspace files for debugging without host-file access."""
+        try:
+            return {
+                path: read_file(workspace_path, path)
+                for path in list_files(workspace_path)
+            }
+        except FileToolError:
+            return {}

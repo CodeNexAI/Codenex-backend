@@ -5,6 +5,8 @@ import pytest
 from app.models import schemas
 from app.sandbox.security import SandboxSecurityError
 from app.tools.file_tools import (
+    MAX_FILE_SIZE_BYTES,
+    FileToolError,
     create_file,
     delete_file,
     list_files,
@@ -22,14 +24,55 @@ def test_file_tools_create_read_and_list(tmp_path: Path):
     assert list_files(str(tmp_path)) == ["app/main.py"]
 
 
+@pytest.mark.parametrize("unsafe_path", ["../escape.py", "/etc/passwd", "."])
+def test_file_tools_block_unsafe_paths(tmp_path: Path, unsafe_path: str) -> None:
+    with pytest.raises(FileToolError):
+        create_file(str(tmp_path), unsafe_path, "print('nope')")
+
+    with pytest.raises(FileToolError):
+        update_file(str(tmp_path), unsafe_path, "print('nope')")
+
+    with pytest.raises(FileToolError):
+        delete_file(str(tmp_path), unsafe_path)
+
+
+def test_file_tools_limit_size_and_report_missing_files(tmp_path: Path) -> None:
+    with pytest.raises(FileToolError, match="size limit"):
+        create_file(str(tmp_path), "large.txt", "x" * (MAX_FILE_SIZE_BYTES + 1))
+
+    with pytest.raises(FileToolError, match="does not exist"):
+        read_file(str(tmp_path), "missing.txt")
+
+    with pytest.raises(FileToolError, match="does not exist"):
+        delete_file(str(tmp_path), "missing.txt")
+
+
+def test_file_tools_ignore_symlinks_escaping_workspace(tmp_path: Path) -> None:
+    external_file = tmp_path.parent / "external.txt"
+    external_file.write_text("private", encoding="utf-8")
+    (tmp_path / "escaped-link").symlink_to(external_file)
+
+    assert list_files(str(tmp_path)) == []
+
+    with pytest.raises(FileToolError):
+        read_file(str(tmp_path), "escaped-link")
+
+
+def test_file_tools_delete_existing_file(tmp_path: Path) -> None:
+    create_file(str(tmp_path), "app/main.py", "print('hello')")
+    delete_file(str(tmp_path), "app/main.py")
+
+    assert list_files(str(tmp_path)) == []
+
+
 def test_file_tools_block_path_traversal(tmp_path: Path):
-    with pytest.raises(SandboxSecurityError):
+    with pytest.raises(FileToolError):
         create_file(str(tmp_path), "../escape.py", "print('nope')")
 
-    with pytest.raises(SandboxSecurityError):
+    with pytest.raises(FileToolError):
         update_file(str(tmp_path), "../escape.py", "print('nope')")
 
-    with pytest.raises(SandboxSecurityError):
+    with pytest.raises(FileToolError):
         delete_file(str(tmp_path), "../escape.py")
 
 

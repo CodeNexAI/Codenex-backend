@@ -118,6 +118,7 @@ class SessionService:
             duration=result.duration,
             stdout=result.stdout,
             stderr=result.stderr,
+            exit_code=result.exit_code,
         )
         self.db.add(record)
         self.db.commit()
