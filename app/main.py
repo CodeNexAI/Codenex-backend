@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 from app.config import Settings, get_settings
+from app.database.database import init_database
 
 
 class HealthResponse(BaseModel):
@@ -26,6 +27,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         settings.app_name,
         settings.app_env,
     )
+    init_database()
     yield
     logging.getLogger("codenex").info("Shutting down %s", settings.app_name)
 

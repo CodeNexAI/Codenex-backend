@@ -13,7 +13,7 @@ def test_settings_use_safe_development_defaults() -> None:
     assert settings.app_name == "CodeNex Backend"
     assert settings.app_env == "development"
     assert settings.debug is False
-    assert settings.database_url is None
+    assert settings.database_url.get_secret_value() == "sqlite:///./codenex.db"
     assert settings.nebius_api_key is None
     assert settings.cors_origins == [
         "http://localhost:3000",

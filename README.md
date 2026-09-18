@@ -49,8 +49,19 @@ environment variables. `APP_NAME`, `APP_ENV`, `DEBUG`, `DATABASE_URL`,
 
 `CORS_ORIGINS` accepts a comma-separated list of origins. `NEBIUS_API_KEY` and
 `DATABASE_URL` are treated as sensitive values and are never logged or exposed
-by the API. The current foundation does not connect to a database or model
-provider. Never commit `.env` files or credentials.
+by the API. By default, CodeNex stores its local development data in
+`codenex.db` through SQLite; set `DATABASE_URL` to a PostgreSQL SQLAlchemy URL
+when a PostgreSQL deployment is introduced. The current foundation does not
+connect to a model provider. Never commit `.env` files or credentials.
+
+## Database
+
+The persistence layer uses SQLAlchemy ORM models and repositories, with
+database initialization kept separate from route handlers. It records projects,
+agent-session lifecycle data, session events, and test-run results; it does not
+implement any agent behavior. SQLite is the development default, while the
+database engine accepts standard SQLAlchemy URLs to support a future PostgreSQL
+deployment.
 
 ## Development
 

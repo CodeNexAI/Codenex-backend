@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     app_env: str = "development"
     debug: bool = False
 
-    database_url: SecretStr | None = None
+    database_url: SecretStr = SecretStr("sqlite:///./codenex.db")
 
     nebius_api_key: SecretStr | None = None
     nebius_base_url: str = "https://api.studio.nebius.ai/v1"
