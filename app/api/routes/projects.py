@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, status
 
-from app.api.dependencies import DatabaseDependency, SettingsDependency, get_project_service
+from app.api.dependencies import DatabaseDependency, SettingsDependency
 from app.models.schemas import ProjectCreate, ProjectResponse
 from app.services.project_service import ProjectService
 

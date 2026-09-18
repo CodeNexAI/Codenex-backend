@@ -28,7 +28,10 @@ class EventManager:
 
     async def broadcast(self, session_id: str, payload: dict[str, Any]) -> None:
         for websocket in list(self._connections.get(session_id, set())):
-            await websocket.send_json(payload)
+            try:
+                await websocket.send_json(payload)
+            except Exception:
+                self.disconnect(session_id, websocket)
 
 
 class SessionService:

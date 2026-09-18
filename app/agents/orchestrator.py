@@ -81,8 +81,8 @@ class Orchestrator:
                     fix_actions = await self.coder.generate_fix_actions(debug_result, plan)
                     self.coder.apply_actions(project.workspace_path, fix_actions)
                     await session_service.add_event(session_id, "debugging", "completed", debug_result.fix)
-            except Exception as exc:  # pragma: no cover - defensive path
+            except Exception:  # pragma: no cover - defensive path
                 logger.exception("orchestrator_failure", extra={"session_id": session_id})
                 session_service.update_session(session_id, "failed", completed=True)
                 await session_service.add_event(session_id, "completed", "failed", "Agent execution failed.")
-                raise exc
+                raise

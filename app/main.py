@@ -58,13 +58,15 @@ def create_app() -> FastAPI:
     async def agent_websocket(websocket: WebSocket, session_id: str) -> None:
         event_manager = get_event_manager()
         await event_manager.connect(session_id, websocket)
-        db = get_session_factory()()
+        historical_events = []
         try:
-            session_service = SessionService(db, event_manager)
-            session = session_service.get_session(session_id)
-            if session is not None:
-                for event in session_service.to_response(session).events:
-                    await websocket.send_json(event.model_dump(mode="json"))
+            with get_session_factory()() as db:
+                session_service = SessionService(db, event_manager)
+                session = session_service.get_session(session_id)
+                if session is not None:
+                    historical_events = session_service.to_response(session).events
+            for event in historical_events:
+                await websocket.send_json(event.model_dump(mode="json"))
             while True:
                 message = await websocket.receive()
                 if message["type"] == "websocket.disconnect":
@@ -73,7 +75,6 @@ def create_app() -> FastAPI:
             pass
         finally:
             event_manager.disconnect(session_id, websocket)
-            db.close()
 
     return app
 
