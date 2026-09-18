@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 
 from app.api.dependencies import (
+    AuthenticatedDependency,
     DatabaseDependency,
     SandboxRunnerDependency,
     SettingsDependency,
@@ -13,12 +14,26 @@ from app.services.project_service import ProjectService
 router = APIRouter(prefix="/api/sandbox", tags=["sandbox"])
 
 
-@router.post("/run", response_model=SandboxResult)
+@router.post(
+    "/run",
+    response_model=SandboxResult,
+    summary="Run an allow-listed sandbox task",
+    description=(
+        "Runs the requested supported task only inside the project's Docker sandbox."
+    ),
+    responses={
+        400: {"description": "Unsupported task or unsafe sandbox request."},
+        401: {"description": "Missing or invalid bearer token."},
+        404: {"description": "Project not found."},
+        503: {"description": "Sandbox infrastructure is unavailable."},
+    },
+)
 async def run_sandbox(
     payload: SandboxRequest,
     db: DatabaseDependency,
     runner: SandboxRunnerDependency,
     settings: SettingsDependency,
+    _auth: AuthenticatedDependency,
 ) -> SandboxResult:
     project = ProjectService(db, settings).get_project(payload.project_id)
     if project is None:

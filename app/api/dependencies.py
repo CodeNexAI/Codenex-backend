@@ -10,6 +10,7 @@ from app.agents.debugger import DebuggerAgent
 from app.agents.orchestrator import Orchestrator
 from app.agents.planner import PlannerAgent
 from app.agents.tester import TesterAgent
+from app.api.auth import require_api_token
 from app.config.settings import Settings, get_settings
 from app.database.database import get_db, get_session_factory
 from app.models.mock_provider import MockModelProvider
@@ -25,6 +26,7 @@ _event_manager = EventManager()
 
 SettingsDependency = Annotated[Settings, Depends(get_settings)]
 DatabaseDependency = Annotated[Session, Depends(get_db)]
+AuthenticatedDependency = Annotated[None, Depends(require_api_token)]
 
 
 def get_event_manager() -> EventManager:

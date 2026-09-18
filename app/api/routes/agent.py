@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, BackgroundTasks, HTTPException, status
 
 from app.api.dependencies import (
+    AuthenticatedDependency,
     OrchestratorDependency,
     SessionServiceDependency,
     SettingsDependency,
@@ -14,7 +15,18 @@ router = APIRouter(prefix="/api/agent", tags=["agent"])
 
 
 @router.post(
-    "/run", response_model=AgentRunResponse, status_code=status.HTTP_202_ACCEPTED
+    "/run",
+    response_model=AgentRunResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Start an agent session",
+    description=(
+        "Creates a session and schedules the orchestrator in the background. "
+        "Progress is available from the session endpoint and WebSocket."
+    ),
+    responses={
+        401: {"description": "Missing or invalid bearer token."},
+        404: {"description": "Project not found."},
+    },
 )
 async def run_agent(
     payload: AgentRequest,
@@ -22,6 +34,7 @@ async def run_agent(
     session_service: SessionServiceDependency,
     orchestrator: OrchestratorDependency,
     settings: SettingsDependency,
+    _auth: AuthenticatedDependency,
 ) -> AgentRunResponse:
     project_service = ProjectService(session_service.db, settings)
     if project_service.get_project(payload.project_id) is None:
@@ -31,9 +44,20 @@ async def run_agent(
     return AgentRunResponse(session_id=session.id, status="started")
 
 
-@router.get("/{session_id}", response_model=AgentSessionResponse)
+@router.get(
+    "/{session_id}",
+    response_model=AgentSessionResponse,
+    summary="Get agent session progress",
+    description="Returns persisted session state, timestamps, retry count, and events.",
+    responses={
+        401: {"description": "Missing or invalid bearer token."},
+        404: {"description": "Session not found."},
+    },
+)
 async def get_agent_session(
-    session_id: str, session_service: SessionServiceDependency
+    session_id: str,
+    session_service: SessionServiceDependency,
+    _auth: AuthenticatedDependency,
 ) -> AgentSessionResponse:
     session = session_service.get_session(session_id)
     if session is None:

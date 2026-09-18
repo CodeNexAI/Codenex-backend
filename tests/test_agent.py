@@ -108,6 +108,9 @@ def test_agent_session_creation(client, app_instance):
 
     assert response.status_code == 202
     assert response.json()["status"] == "started"
+    session = client.get(f"/api/agent/{response.json()['session_id']}")
+    assert session.status_code == 200
+    assert session.json()["current_stage"] is None
 
 
 def test_agent_websocket_endpoint(client, app_instance):
@@ -150,7 +153,10 @@ def test_run_tests_endpoint_persists_results(client, app_instance):
         "/api/projects", json={"name": "Test Project", "project_type": "fastapi"}
     ).json()
 
-    response = client.post("/api/tests/run", json={"project_id": project["id"]})
+    response = client.post(
+        "/api/tests/run",
+        json={"project_id": project["id"], "test_command": "pytest"},
+    )
 
     assert response.status_code == 201
     result = response.json()

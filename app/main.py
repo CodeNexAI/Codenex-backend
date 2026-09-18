@@ -7,6 +7,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.api.auth import authorize_websocket
 from app.api.dependencies import get_event_manager
 from app.api.routes.agent import router as agent_router
 from app.api.routes.health import router as health_router
@@ -86,6 +87,8 @@ def create_app() -> FastAPI:
 
     @app.websocket("/ws/agent/{session_id}")
     async def agent_websocket(websocket: WebSocket, session_id: str) -> None:
+        if not await authorize_websocket(websocket):
+            return
         event_manager = get_event_manager()
         await event_manager.connect(session_id, websocket)
         historical_events = []

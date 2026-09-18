@@ -21,3 +21,20 @@ The sandbox executor applies:
 - a controlled working directory mount
 
 These controls provide the initial Milestone 1 security foundation and can be extended later.
+# Security Model
+
+CodeNex treats requirements, generated files, and generated code as untrusted.
+Project file operations are contained within each assigned workspace, and
+sandbox execution uses Docker with a task allowlist, disabled networking,
+capability dropping, non-root execution, resource limits, and a controlled
+workspace mount.
+
+## API access
+
+Stateful HTTP routes and agent WebSocket connections require a configured
+`API_ACCESS_TOKEN` bearer token. This is a single trusted-tenant control,
+appropriate only for a deployment where all API users are trusted operators.
+It is not multi-tenant authorization: a future production identity provider
+must associate projects and sessions with authenticated principals.
+
+Never commit `API_ACCESS_TOKEN`, model credentials, or `.env` files.
