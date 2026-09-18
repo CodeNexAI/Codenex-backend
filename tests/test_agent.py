@@ -51,7 +51,12 @@ def test_mock_model_provider_and_planner_and_debugger():
 def test_coder_agent_creates_files(tmp_path: Path):
     provider = MockModelProvider()
     plan = asyncio.run(PlannerAgent(provider).plan("Create a FastAPI student API"))
-    actions = asyncio.run(CoderAgent(provider).generate_actions(plan))
+    actions = asyncio.run(
+        CoderAgent(provider).generate_actions(
+            "Create a FastAPI student API",
+            plan,
+        )
+    )
 
     CoderAgent(provider).apply_actions(str(tmp_path), actions)
 

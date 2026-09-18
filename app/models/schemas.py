@@ -121,8 +121,8 @@ class PlannedFile(BaseModel):
 
 
 class CodeAction(BaseModel):
-    action: Literal["create_file", "update_file", "delete_file"]
-    path: str
+    action: Literal["CREATE_FILE", "UPDATE_FILE", "DELETE_FILE"]
+    path: str = Field(min_length=1)
     content: str | None = None
 
 

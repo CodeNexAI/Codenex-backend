@@ -63,7 +63,10 @@ class Orchestrator:
                     },
                 )
 
-                actions = await self.coder.generate_actions(plan)
+                actions = await self.coder.generate_actions(
+                    requirement,
+                    plan,
+                )
                 self.coder.apply_actions(project.workspace_path, actions)
                 await session_service.add_event(
                     session_id,
