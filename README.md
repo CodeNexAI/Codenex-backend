@@ -104,7 +104,8 @@ codenex-backend/
 ├── docs/
 ├── sandbox/
 ├── scripts/
-└── tests/
+├── tests/
+└── pyproject.toml
 ```
 
 ## Environment Variables

@@ -1,4 +1,7 @@
-def test_health(client):
+"""Health endpoint tests."""
+
+
+def test_health(client) -> None:
     response = client.get("/health")
 
     assert response.status_code == 200
