@@ -8,7 +8,7 @@ from app.agents.debugger import DebuggerAgent
 from app.agents.orchestrator import Orchestrator
 from app.agents.planner import PlannerAgent
 from app.agents.tester import TesterAgent as BackendTesterAgent
-from app.api.dependencies import get_orchestrator
+from app.api.dependencies import get_orchestrator, get_sandbox_runner
 from app.config.settings import get_settings
 from app.database.database import get_session_factory
 from app.models.nemotron import MockModelProvider, NemotronProvider
@@ -175,6 +175,33 @@ def test_agent_websocket_endpoint(client, app_instance):
 
     with client.websocket_connect(f"/ws/agent/{session_id}"):
         pass
+
+
+def test_run_tests_endpoint_persists_results(client, app_instance):
+    class FakeRunner:
+        def run_tests(self, workspace_path: str) -> schemas.SandboxResult:
+            return schemas.SandboxResult(
+                status="passed",
+                exit_code=0,
+                stdout="3 passed in 0.10s",
+                stderr="",
+                duration=0.10,
+            )
+
+    app_instance.dependency_overrides[get_sandbox_runner] = lambda: FakeRunner()
+    project = client.post("/api/projects", json={"name": "Test Project", "project_type": "fastapi"}).json()
+
+    response = client.post("/api/tests/run", json={"project_id": project["id"]})
+
+    assert response.status_code == 201
+    result = response.json()
+    assert result["status"] == "passed"
+    assert result["passed"] == 3
+    assert result["session_id"]
+
+    lookup = client.get(f"/api/tests/{result['session_id']}")
+    assert lookup.status_code == 200
+    assert lookup.json()["status"] == "passed"
 
 
 def test_orchestrator_retry_limit(app_instance):

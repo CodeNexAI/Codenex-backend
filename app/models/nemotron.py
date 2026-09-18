@@ -71,10 +71,10 @@ class NemotronProvider(ModelProvider):
             ],
             "temperature": 0.1,
         }
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(self._settings.nebius_base_url, headers=headers, json=payload)
-            response.raise_for_status()
         try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(self._settings.nebius_base_url, headers=headers, json=payload)
+                response.raise_for_status()
             body = response.json()
             choice = body.get("choices", [{}])[0]
             message = choice.get("message", {})
@@ -82,7 +82,7 @@ class NemotronProvider(ModelProvider):
             if content is None:
                 return fallback
             return json.loads(self._normalize_content(content))
-        except (ValueError, KeyError, IndexError, TypeError):
+        except (httpx.HTTPError, ValueError, KeyError, IndexError, TypeError):
             return fallback
 
     def _normalize_content(self, content: Any) -> str:

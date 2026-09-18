@@ -37,4 +37,5 @@ class GitTools:
         return self._run(workspace_path, "add", *validated_paths).stdout
 
     def commit(self, workspace_path: str, message: str) -> str:
-        return self._run(workspace_path, "commit", "-m", message).stdout
+        result = self._run(workspace_path, "commit", "-m", message)
+        return "\n".join(part for part in [result.stdout.strip(), result.stderr.strip()] if part)

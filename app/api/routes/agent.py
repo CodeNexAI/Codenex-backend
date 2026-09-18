@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import asyncio
-
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, HTTPException, status
 
 from app.api.dependencies import OrchestratorDependency, SessionServiceDependency, SettingsDependency
 from app.models.schemas import AgentRequest, AgentSessionResponse
@@ -14,6 +12,7 @@ router = APIRouter(prefix="/api/agent", tags=["agent"])
 @router.post("/run", status_code=status.HTTP_202_ACCEPTED)
 async def run_agent(
     payload: AgentRequest,
+    background_tasks: BackgroundTasks,
     session_service: SessionServiceDependency,
     orchestrator: OrchestratorDependency,
     settings: SettingsDependency,
@@ -22,7 +21,7 @@ async def run_agent(
     if project_service.get_project(payload.project_id) is None:
         raise HTTPException(status_code=404, detail="Project not found")
     session = session_service.create_session(payload.project_id, status="started")
-    asyncio.create_task(orchestrator.run_session(session.id, payload.requirement))
+    background_tasks.add_task(orchestrator.run_session, session.id, payload.requirement)
     return {"session_id": session.id, "status": "started"}
 
 

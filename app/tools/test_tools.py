@@ -20,7 +20,7 @@ def parse_test_result(result: SandboxResult) -> TestResult:
                 failed = counts.get("failed", 0)
                 skipped = counts.get("skipped", 0)
     total = passed + failed + skipped
-    status = "passed" if result.exit_code == 0 else ("failed" if result.status == "failed" else "error")
+    status = result.status if result.status == "error" else ("passed" if result.exit_code == 0 else "failed")
     return TestResult(
         status=status,
         total=total,

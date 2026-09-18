@@ -69,7 +69,7 @@ def create_app() -> FastAPI:
                 await websocket.send_json(event.model_dump(mode="json"))
             while True:
                 message = await websocket.receive()
-                if message["type"] == "websocket.disconnect":
+                if message["type"] in {"websocket.disconnect", "websocket.close"}:
                     break
         except WebSocketDisconnect:
             pass
