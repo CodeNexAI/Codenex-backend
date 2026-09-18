@@ -13,7 +13,8 @@ class CoderAgent:
         fallback = {
             "actions": [
                 CodeAction(action="create_file", path=path, content="").model_dump()
-                for path in plan.files
+                for planned_file in plan.files
+                for path in [planned_file.path]
             ]
         }
         payload = await self.provider.generate_structured_response(
@@ -29,7 +30,7 @@ class CoderAgent:
         return [
             CodeAction(
                 action="update_file",
-                path=plan.files[0] if plan.files else "README.md",
+                path=plan.files[0].path if plan.files else "README.md",
                 content=f"# Fix applied\n\n{debug_result.fix}\n",
             )
         ]

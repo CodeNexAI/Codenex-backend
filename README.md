@@ -44,10 +44,12 @@ See `docs/agent-workflow.md`.
 ## Model providers
 
 `ModelProvider` is independent of FastAPI and defines text and structured
-response operations for future model integrations. `MockModelProvider` is the
-only implementation in this foundation; it provides deterministic, network-free
-responses for local development and tests. Provider-specific integrations are
-not implemented yet.
+response operations. `NebiusNemotronProvider` uses the documented
+OpenAI-compatible Nebius Token Factory chat-completions API when
+`NEBIUS_API_KEY`, `NEBIUS_BASE_URL`, and `NEMOTRON_MODEL` are configured.
+`MockModelProvider` remains deterministic and network-free for local
+development and tests. See [Nebius integration](docs/nebius-integration.md) for
+configuration and separate integration-test instructions.
 
 ## Sandbox
 

@@ -103,9 +103,21 @@ class TestResult(BaseModel):
 
 class ImplementationPlan(BaseModel):
     project_type: str
-    tasks: list[str]
-    files: list[str]
+    tasks: list[ImplementationTask]
+    files: list[PlannedFile]
     dependencies: list[str] = Field(default_factory=list)
+    testing_strategy: str
+    constraints: list[str] = Field(default_factory=list)
+
+
+class ImplementationTask(BaseModel):
+    id: str = Field(min_length=1)
+    description: str = Field(min_length=1)
+
+
+class PlannedFile(BaseModel):
+    path: str = Field(min_length=1)
+    purpose: str = Field(min_length=1)
 
 
 class CodeAction(BaseModel):
