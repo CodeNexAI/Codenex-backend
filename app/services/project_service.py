@@ -28,11 +28,22 @@ class ProjectService:
             workspace_path=str(workspace_root / f"{slug}-{uuid.uuid4().hex[:8]}"),
             status="created",
         )
-        Path(project.workspace_path).mkdir(parents=True, exist_ok=True)
         self.db.add(project)
-        self.db.commit()
-        self.db.refresh(project)
-        return project
+        try:
+            self.db.commit()
+            self.db.refresh(project)
+            Path(project.workspace_path).mkdir(parents=True, exist_ok=True)
+            return project
+        except Exception:
+            self.db.rollback()
+            workspace_path = Path(project.workspace_path)
+            if workspace_path.exists():
+                shutil.rmtree(workspace_path)
+            persisted = self.db.get(Project, project.id)
+            if persisted is not None:
+                self.db.delete(persisted)
+                self.db.commit()
+            raise
 
     def list_projects(self) -> list[Project]:
         return list(self.db.query(Project).order_by(Project.created_at.desc()).all())

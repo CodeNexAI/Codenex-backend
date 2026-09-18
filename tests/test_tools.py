@@ -60,7 +60,7 @@ def test_parse_test_result_preserves_execution_errors():
 
 def test_git_add_blocks_path_traversal(tmp_path: Path):
     (tmp_path / "workspace").mkdir()
-    tools = GitTools(str(tmp_path))
+    tools = GitTools(str(tmp_path), allow_host_git=True)
 
     with pytest.raises(SandboxSecurityError):
         tools.add(str(tmp_path / "workspace"), "../outside.txt")

@@ -280,6 +280,9 @@ def test_run_tests_endpoint_marks_session_failed_on_sandbox_error(client, app_in
         assert session.status == "failed"
         assert session.completed_at is not None
 
+    lookup = client.get(f"/api/tests/{session.id}")
+    assert lookup.status_code == 404
+
 
 def test_orchestrator_retry_limit(app_instance):
     settings = get_settings()

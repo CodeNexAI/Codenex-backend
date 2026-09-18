@@ -25,7 +25,7 @@ class DockerSandboxExecutor:
         if shutil.which("docker") is None:
             raise SandboxExecutionError("Docker is required for sandbox execution.")
 
-        command_map = {"pytest": ["pytest", "-q"]}
+        command_map = {"pytest": ["pytest", "-q", "-p", "no:cacheprovider"]}
         command = command_map[safe_task]
         docker_command = [
             "docker",
@@ -38,7 +38,7 @@ class DockerSandboxExecutor:
             "--memory",
             "512m",
             "-v",
-            f"{workspace}:/workspace",
+            f"{workspace}:/workspace:ro",
             "-w",
             "/workspace",
             self.image,

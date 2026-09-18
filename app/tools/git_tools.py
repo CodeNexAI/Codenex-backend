@@ -7,10 +7,13 @@ from app.sandbox.security import ensure_within_base
 
 
 class GitTools:
-    def __init__(self, workspace_root: str) -> None:
+    def __init__(self, workspace_root: str, allow_host_git: bool = False) -> None:
         self.workspace_root = workspace_root
+        self.allow_host_git = allow_host_git
 
     def _run(self, workspace_path: str, *args: str) -> subprocess.CompletedProcess[str]:
+        if not self.allow_host_git:
+            raise RuntimeError("Host git execution is disabled for untrusted workflows.")
         workspace = ensure_within_base(self.workspace_root, workspace_path)
         return subprocess.run(
             ["git", *args],
