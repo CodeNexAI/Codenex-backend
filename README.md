@@ -36,16 +36,21 @@ curl http://127.0.0.1:8000/health
 
 ## Configuration
 
-Copy `.env.example` to `.env` and adjust values for local development. All
-settings use the `CODENEX_` prefix and may be supplied as environment variables.
+Copy the template before running the service:
 
-| Variable | Default | Purpose |
-| --- | --- | --- |
-| `CODENEX_APP_NAME` | `CodeNex Backend` | Application name used in logs |
-| `CODENEX_ENVIRONMENT` | `development` | Runtime environment label |
-| `CODENEX_LOG_LEVEL` | `INFO` | Application log-level setting |
+```bash
+cp .env.example .env
+```
 
-Never commit `.env` files or credentials.
+Settings are read from `.env` for local development and can be overridden by
+environment variables. `APP_NAME`, `APP_ENV`, `DEBUG`, `DATABASE_URL`,
+`NEBIUS_API_KEY`, `NEBIUS_BASE_URL`, `NEMOTRON_MODEL`, `CORS_ORIGINS`,
+`SANDBOX_TIMEOUT`, and `MAX_AGENT_RETRIES` are supported.
+
+`CORS_ORIGINS` accepts a comma-separated list of origins. `NEBIUS_API_KEY` and
+`DATABASE_URL` are treated as sensitive values and are never logged or exposed
+by the API. The current foundation does not connect to a database or model
+provider. Never commit `.env` files or credentials.
 
 ## Development
 

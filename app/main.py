@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-from app.config import get_settings
+from app.config import Settings, get_settings
 
 
 class HealthResponse(BaseModel):
@@ -24,16 +24,19 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     logging.getLogger("codenex").info(
         "Starting %s in %s environment",
         settings.app_name,
-        settings.environment,
+        settings.app_env,
     )
     yield
     logging.getLogger("codenex").info("Shutting down %s", settings.app_name)
 
 
+settings: Settings = get_settings()
+
 app = FastAPI(
-    title="CodeNex AI Backend",
+    title=settings.app_name,
     description="Backend foundation for CodeNex AI.",
     version="0.1.0",
+    debug=settings.debug,
     lifespan=lifespan,
 )
 
