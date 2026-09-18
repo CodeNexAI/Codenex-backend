@@ -51,6 +51,13 @@ OpenAI-compatible Nebius Token Factory chat-completions API when
 development and tests. See [Nebius integration](docs/nebius-integration.md) for
 configuration and separate integration-test instructions.
 
+## API authentication
+
+Set a strong `API_ACCESS_TOKEN` in `.env`. Stateful project, agent, test, and
+sandbox APIs plus the agent WebSocket require it as a bearer token. This is a
+single trusted-tenant foundation control; see [Security model](docs/security.md)
+for its scope and production considerations.
+
 ## Sandbox
 
 Generated code is not executed directly on the backend host. The backend uses a dedicated sandbox abstraction that is designed to invoke a separate Docker image with restricted networking, timeouts, and workspace scoping.

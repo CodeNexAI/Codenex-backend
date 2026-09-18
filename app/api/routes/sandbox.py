@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 
 from app.api.dependencies import (
+    AuthenticatedDependency,
     DatabaseDependency,
     SandboxRunnerDependency,
     SettingsDependency,
@@ -19,6 +20,7 @@ async def run_sandbox(
     db: DatabaseDependency,
     runner: SandboxRunnerDependency,
     settings: SettingsDependency,
+    _auth: AuthenticatedDependency,
 ) -> SandboxResult:
     project = ProjectService(db, settings).get_project(payload.project_id)
     if project is None:

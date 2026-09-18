@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, status
 
 from app.agents.tester import TesterAgent
 from app.api.dependencies import (
+    AuthenticatedDependency,
     SandboxRunnerDependency,
     SessionServiceDependency,
     SettingsDependency,
@@ -19,6 +20,7 @@ async def run_tests(
     session_service: SessionServiceDependency,
     runner: SandboxRunnerDependency,
     settings: SettingsDependency,
+    _auth: AuthenticatedDependency,
 ) -> TestResult:
     project_service = ProjectService(session_service.db, settings)
     project = project_service.get_project(payload.project_id)
@@ -40,7 +42,9 @@ async def run_tests(
 
 @router.get("/{session_id}", response_model=TestResult)
 async def get_test_result(
-    session_id: str, session_service: SessionServiceDependency
+    session_id: str,
+    session_service: SessionServiceDependency,
+    _auth: AuthenticatedDependency,
 ) -> TestResult:
     result = session_service.latest_test_result(session_id)
     if result is None:

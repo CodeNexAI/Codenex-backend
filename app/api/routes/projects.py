@@ -1,6 +1,10 @@
 from fastapi import APIRouter, HTTPException, status
 
-from app.api.dependencies import DatabaseDependency, SettingsDependency
+from app.api.dependencies import (
+    AuthenticatedDependency,
+    DatabaseDependency,
+    SettingsDependency,
+)
 from app.models.schemas import ProjectCreate, ProjectResponse
 from app.services.project_service import ProjectService
 
@@ -12,6 +16,7 @@ async def create_project(
     payload: ProjectCreate,
     db: DatabaseDependency,
     settings: SettingsDependency,
+    _auth: AuthenticatedDependency,
 ) -> ProjectResponse:
     service = ProjectService(db, settings)
     return ProjectResponse.model_validate(service.create_project(payload))
@@ -19,7 +24,7 @@ async def create_project(
 
 @router.get("", response_model=list[ProjectResponse])
 async def list_projects(
-    db: DatabaseDependency, settings: SettingsDependency
+    db: DatabaseDependency, settings: SettingsDependency, _auth: AuthenticatedDependency
 ) -> list[ProjectResponse]:
     service = ProjectService(db, settings)
     return [
@@ -29,7 +34,10 @@ async def list_projects(
 
 @router.get("/{project_id}", response_model=ProjectResponse)
 async def get_project(
-    project_id: str, db: DatabaseDependency, settings: SettingsDependency
+    project_id: str,
+    db: DatabaseDependency,
+    settings: SettingsDependency,
+    _auth: AuthenticatedDependency,
 ) -> ProjectResponse:
     service = ProjectService(db, settings)
     project = service.get_project(project_id)
@@ -40,7 +48,10 @@ async def get_project(
 
 @router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_project(
-    project_id: str, db: DatabaseDependency, settings: SettingsDependency
+    project_id: str,
+    db: DatabaseDependency,
+    settings: SettingsDependency,
+    _auth: AuthenticatedDependency,
 ) -> None:
     service = ProjectService(db, settings)
     if not service.delete_project(project_id):

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 
-from pydantic import Field
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     app_name: str = Field(default="CodeNex Backend", alias="APP_NAME")
     app_env: str = Field(default="development", alias="APP_ENV")
     debug: bool = Field(default=True, alias="DEBUG")
+    api_access_token: SecretStr | None = Field(default=None, alias="API_ACCESS_TOKEN")
     database_url: str = Field(default="sqlite:///./codenex.db", alias="DATABASE_URL")
     cors_origins_raw: str = Field(
         default="http://localhost:5173",

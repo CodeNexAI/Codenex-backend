@@ -14,6 +14,7 @@ def app_instance(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("DATABASE_URL", f"sqlite:///{db_path}")
     monkeypatch.setenv("WORKSPACE_ROOT", str(workspace_root))
     monkeypatch.setenv("CORS_ORIGINS", "http://localhost:5173")
+    monkeypatch.setenv("API_ACCESS_TOKEN", "test-access-token")
 
     from app.config.settings import get_settings
 
@@ -27,5 +28,8 @@ def app_instance(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
 
 @pytest.fixture()
 def client(app_instance):
-    with TestClient(app_instance) as client:
+    with TestClient(
+        app_instance,
+        headers={"Authorization": "Bearer test-access-token"},
+    ) as client:
         yield client

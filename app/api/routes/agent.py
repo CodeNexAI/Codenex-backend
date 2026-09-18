@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, BackgroundTasks, HTTPException, status
 
 from app.api.dependencies import (
+    AuthenticatedDependency,
     OrchestratorDependency,
     SessionServiceDependency,
     SettingsDependency,
@@ -22,6 +23,7 @@ async def run_agent(
     session_service: SessionServiceDependency,
     orchestrator: OrchestratorDependency,
     settings: SettingsDependency,
+    _auth: AuthenticatedDependency,
 ) -> AgentRunResponse:
     project_service = ProjectService(session_service.db, settings)
     if project_service.get_project(payload.project_id) is None:
@@ -33,7 +35,9 @@ async def run_agent(
 
 @router.get("/{session_id}", response_model=AgentSessionResponse)
 async def get_agent_session(
-    session_id: str, session_service: SessionServiceDependency
+    session_id: str,
+    session_service: SessionServiceDependency,
+    _auth: AuthenticatedDependency,
 ) -> AgentSessionResponse:
     session = session_service.get_session(session_id)
     if session is None:
