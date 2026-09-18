@@ -1,10 +1,13 @@
 from pathlib import Path
 
+from fastapi.testclient import TestClient
+
+from app.config.settings import get_settings
 from app.database.database import get_session_factory
 from app.database.models import Project
 
 
-def test_project_create_retrieve_and_delete(client):
+def test_project_create_retrieve_and_delete(client: TestClient) -> None:
     create_response = client.post(
         "/api/projects",
         json={
@@ -15,7 +18,8 @@ def test_project_create_retrieve_and_delete(client):
     )
     assert create_response.status_code == 201
     project = create_response.json()
-    workspace_path = Path(project["workspace_path"])
+    assert "workspace_path" not in project
+    workspace_path = next(Path(get_settings().workspace_root).glob("student-api-*"))
     assert workspace_path.exists()
 
     list_response = client.get("/api/projects")
@@ -35,7 +39,20 @@ def test_project_create_retrieve_and_delete(client):
     assert missing_response.json()["error"]["message"] == "Project not found"
 
 
-def test_project_delete_skips_external_workspace(client, tmp_path: Path):
+def test_project_rejects_unsupported_type(client: TestClient) -> None:
+    """Project creation only accepts the currently supported project types."""
+    response = client.post(
+        "/api/projects",
+        json={"name": "Unsupported", "project_type": "rust"},
+    )
+
+    assert response.status_code == 422
+
+
+def test_project_delete_skips_external_workspace(
+    client: TestClient,
+    tmp_path: Path,
+) -> None:
     external_workspace = tmp_path / "external-workspace"
     external_workspace.mkdir()
     (external_workspace / "keep.txt").write_text("safe", encoding="utf-8")

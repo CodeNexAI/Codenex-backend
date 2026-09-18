@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.models.nemotron import ModelProvider
+from app.models.provider import ModelProvider
 from app.models.schemas import DebugResult, TestResult
 
 
@@ -14,7 +14,7 @@ class DebuggerAgent:
             root_cause="Tests did not pass",
             fix="Inspect the failing implementation and retry",
         )
-        payload = await self.provider.generate_structured(
+        payload = await self.provider.generate_structured_response(
             prompt=(
                 "Analyze test failure: "
                 f"stdout={test_result.stdout}\nstderr={test_result.stderr}"

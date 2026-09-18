@@ -12,7 +12,7 @@ from app.agents.planner import PlannerAgent
 from app.agents.tester import TesterAgent
 from app.config.settings import Settings, get_settings
 from app.database.database import get_db, get_session_factory
-from app.models.nemotron import build_model_provider
+from app.models.mock_provider import MockModelProvider
 from app.sandbox.executor import DockerSandboxExecutor
 from app.sandbox.runner import SandboxRunner
 from app.services.project_service import ProjectService
@@ -56,7 +56,7 @@ SessionServiceDependency = Annotated[SessionService, Depends(get_session_service
 
 
 def get_orchestrator(settings: SettingsDependency) -> Orchestrator:
-    provider = build_model_provider(settings)
+    provider = MockModelProvider()
     runner = get_sandbox_runner(settings)
     return Orchestrator(
         session_factory=get_session_factory(),

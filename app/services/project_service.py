@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.config.settings import Settings
 from app.database.models import Project
+from app.database.repository import ProjectRepository
 from app.models.schemas import ProjectCreate
 
 
@@ -16,6 +17,7 @@ class ProjectService:
     def __init__(self, db: Session, settings: Settings) -> None:
         self.db = db
         self.settings = settings
+        self.repository = ProjectRepository(db)
 
     def create_project(self, payload: ProjectCreate) -> Project:
         workspace_root = Path(self.settings.workspace_root).resolve()
@@ -33,10 +35,8 @@ class ProjectService:
             workspace_path=str(workspace_root / f"{slug}-{uuid.uuid4().hex[:8]}"),
             status="created",
         )
-        self.db.add(project)
         try:
-            self.db.commit()
-            self.db.refresh(project)
+            self.repository.add(project)
         except Exception:
             self.db.rollback()
             raise
@@ -47,17 +47,16 @@ class ProjectService:
             workspace_path = Path(project.workspace_path)
             if workspace_path.exists():
                 shutil.rmtree(workspace_path)
-            persisted = self.db.get(Project, project.id)
+            persisted = self.repository.get(project.id)
             if persisted is not None:
-                self.db.delete(persisted)
-                self.db.commit()
+                self.repository.delete(persisted)
             raise
 
     def list_projects(self) -> list[Project]:
-        return list(self.db.query(Project).order_by(Project.created_at.desc()).all())
+        return self.repository.list()
 
     def get_project(self, project_id: str) -> Project | None:
-        return self.db.get(Project, project_id)
+        return self.repository.get(project_id)
 
     def delete_project(self, project_id: str) -> bool:
         project = self.get_project(project_id)
@@ -72,6 +71,5 @@ class ProjectService:
         else:
             if workspace_path.exists():
                 shutil.rmtree(workspace_path)
-        self.db.delete(project)
-        self.db.commit()
+        self.repository.delete(project)
         return True

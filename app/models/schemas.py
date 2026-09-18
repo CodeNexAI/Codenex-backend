@@ -18,7 +18,7 @@ class APIErrorResponse(BaseModel):
 class ProjectCreate(BaseModel):
     name: str = Field(min_length=1, max_length=255)
     description: str | None = None
-    project_type: str = Field(default="generic", min_length=1, max_length=100)
+    project_type: Literal["python", "fastapi", "react", "node", "flutter"]
 
 
 class ProjectResponse(BaseModel):
@@ -28,7 +28,6 @@ class ProjectResponse(BaseModel):
     name: str
     description: str | None
     project_type: str
-    workspace_path: str
     status: str
     created_at: datetime
     updated_at: datetime

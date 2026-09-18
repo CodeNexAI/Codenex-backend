@@ -19,7 +19,7 @@ CodeNex Backend provides a clean backend foundation with API endpoints, WebSocke
 - FastAPI backend with async endpoints and WebSocket support
 - SQLite + SQLAlchemy persistence for projects, sessions, events, and test results
 - Planner, Coder, Tester, Debugger, and Orchestrator foundation classes
-- Nemotron model provider abstraction with a mock provider for local development
+- Provider-independent model interface with a deterministic local mock provider
 - Docker sandbox abstraction for controlled execution
 - Safe file, terminal, test, and Git tooling primitives
 - Structured error responses
@@ -41,19 +41,13 @@ with a bounded retry loop.
 
 See `docs/agent-workflow.md`.
 
-## NVIDIA Nemotron Integration
+## Model providers
 
-CodeNex uses NVIDIA Nemotron through Nebius Token Factory as the intelligence layer for coding agents. Agent code does not call Nebius directly; the backend routes those requests through `NemotronProvider`, and local development falls back to `MockModelProvider` when credentials are not configured.
-
-## Nebius Token Factory Integration
-
-Configure the following environment variables to enable the real provider:
-
-- `NEBIUS_API_KEY`
-- `NEBIUS_BASE_URL`
-- `NEMOTRON_MODEL`
-
-See `docs/nebius-integration.md`.
+`ModelProvider` is independent of FastAPI and defines text and structured
+response operations for future model integrations. `MockModelProvider` is the
+only implementation in this foundation; it provides deterministic, network-free
+responses for local development and tests. Provider-specific integrations are
+not implemented yet.
 
 ## Sandbox
 
