@@ -43,6 +43,21 @@ def test_parse_test_result_handles_any_pytest_order():
     assert parsed.skipped == 3
 
 
+def test_parse_test_result_prefers_most_complete_summary():
+    result = schemas.SandboxResult(
+        status="passed",
+        exit_code=0,
+        stdout="1 passed in 0.05s\n2 passed, 1 skipped in 0.10s",
+        stderr="",
+        duration=0.10,
+    )
+
+    parsed = parse_test_result(result)
+
+    assert parsed.passed == 2
+    assert parsed.skipped == 1
+
+
 def test_parse_test_result_preserves_execution_errors():
     result = schemas.SandboxResult(
         status="failed",

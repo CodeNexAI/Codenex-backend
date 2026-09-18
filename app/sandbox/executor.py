@@ -38,7 +38,7 @@ class DockerSandboxExecutor:
             "--memory",
             "512m",
             "-v",
-            f"{workspace}:/workspace:ro",
+            f"{workspace}:/workspace",
             "-w",
             "/workspace",
             self.image,

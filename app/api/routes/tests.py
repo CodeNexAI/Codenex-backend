@@ -28,7 +28,7 @@ async def run_tests(
         session_service.update_session(session.id, result.status, completed=True)
         return TestResult.model_validate(stored)
     except SandboxExecutionError as exc:
-        session_service.update_session(session.id, "failed", completed=True)
+        session_service.update_session(session.id, "failed", retry_count=0, completed=True)
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 

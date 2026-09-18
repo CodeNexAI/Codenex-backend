@@ -32,10 +32,13 @@ class ProjectService:
         try:
             self.db.commit()
             self.db.refresh(project)
+        except Exception:
+            self.db.rollback()
+            raise
+        try:
             Path(project.workspace_path).mkdir(parents=True, exist_ok=True)
             return project
         except Exception:
-            self.db.rollback()
             workspace_path = Path(project.workspace_path)
             if workspace_path.exists():
                 shutil.rmtree(workspace_path)
